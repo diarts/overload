@@ -3,6 +3,20 @@ import collections
 import contextlib
 
 from overload.type.type import _Type
+from overload.exception.type import (
+    CustomTypeError,
+    CustomTypeAlreadyExist,
+    IndexValueError,
+)
+
+
+class _UnknownType1:
+    pass
+
+
+class _UnknownType2:
+    pass
+
 
 out_up_types_types_and_expectations = [
     # Native types
@@ -116,10 +130,10 @@ out_up_types_types_and_expectations = [
     # Any
     (typing.Any, _Type(typing.Any)),
     # Optional
-    (typing.Optional, _Type(typing.Any)),
+    (typing.Optional, _Type(typing.Optional)),
     (typing.Optional[str], (_Type(str), _Type(type(None)))),
     # Union
-    (typing.Union, (_Type(typing.Any))),
+    (typing.Union, (_Type(typing.Union))),
     (typing.Union[str, int], (_Type(str), _Type(int))),
     # Deep mixed type
     (typing.List[
@@ -147,4 +161,18 @@ out_up_types_types_and_expectations = [
          )
      )
      ),
+    # Unknown type
+    (_UnknownType1, _Type(_UnknownType1)),
+]
+
+set_custom_type_index = [
+    # type errors
+    (CustomTypeError, 5, None),
+    (CustomTypeAlreadyExist, int, None),
+    # correct add
+    (None, _UnknownType1, 100),
+    # index errors
+    (IndexValueError, _UnknownType2, 99),
+    (IndexValueError, _UnknownType2, 'test'),
+    (IndexValueError, _UnknownType2, 100),
 ]
