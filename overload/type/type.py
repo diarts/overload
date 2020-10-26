@@ -36,7 +36,13 @@ from collections import (
     defaultdict,
     OrderedDict,
 )
+from types import (
+    FunctionType,
+    CoroutineType,
+)
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
+
+from overload.exception.type import *
 
 
 class _Type:
@@ -46,7 +52,8 @@ class _Type:
 
     def __repr__(self):
         return (f'<class Overload Type> type={self.type} '
-                f'v_types={self.v_types} k_types={self.k_types}')
+                f'v_types={self.v_types} k_types={self.k_types} '
+                f'can_mixed_v={self.can_mixed_v}')
 
     def __init__(
             self, type_: Union[type, TypeVar],
@@ -132,13 +139,49 @@ class _TypeHandler:
         Optional: Any,
     }
 
+    __custom_types__ = {}
+    __last_custom_types_id = 99
+
     __slots__ = ('__dict__',)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<class Type Handler>'
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Handler for python3 base types and types from typing module.'
+
+    def __getitem__(self, type_) -> int:
+        """Convert python3 type to overload module type id."""
+        try:
+            return self.mapper[type_]
+        except KeyError:
+            try:
+                return self.__custom_types__[type_]
+            except KeyError:
+                raise UnknownType(type_)
+
+    def __setitem__(self, type_: type, index: int = None) -> int:
+        """Add new type item into __custom_types__ dict."""
+        if type(type_) is not type:
+            raise CustomTypeError(type_)
+
+        try:
+            self[type_]
+        except UnknownType:
+            pass
+        else:
+            raise CustomTypeAlreadyExist(type_, self[type_])
+
+        if index and (
+                type(index) is not int
+                or index in range(0, 100)
+                or index in self.__custom_types__.values()):
+            raise IndexValueError()
+
+        self.__last_custom_types_id += 1
+        self.__custom_types__[type_] = self.__last_custom_types_id
+
+        return self.__last_custom_types_id
 
     @cached_property
     def mapper(self) -> ChainMap:
@@ -223,9 +266,6 @@ class _TypeHandler:
                     except IndexError:
                         pass
         except AttributeError:
-            if type_ is Union or type_ is Optional:
-                real_type = Any
-            else:
-                real_type = type_
+            real_type = type_
 
         return types or _Type(real_type, v_types, k_types, m_v)
