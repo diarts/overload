@@ -19,6 +19,7 @@ class _UnknownType2:
 
 
 out_up_types_types_and_expectations = [
+    # format: input_type, expected
     # Native types
     # 0
     (None, _Type(None)),
@@ -166,6 +167,7 @@ out_up_types_types_and_expectations = [
 ]
 
 set_custom_type_index = [
+    # format: exception, type_, index
     # type errors
     (CustomTypeError, 5, None),
     (CustomTypeAlreadyExist, int, None),
