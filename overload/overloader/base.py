@@ -15,7 +15,6 @@ class Overloader(metaclass=ABCMeta):
     __type_handler__ = _TypeHandler
 
     _strict = False
-    _default_type_count = 0
 
     def __init__(self, overload_object: Any, strict: bool = False):
         self.default = overload_object
