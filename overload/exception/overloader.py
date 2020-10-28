@@ -6,6 +6,7 @@ __all__ = (
     'FunctionRegisterTypeError',
     'MissedAnnotations',
     'AnnotationCountError',
+    'ArgumentNameError',
 )
 
 
@@ -58,3 +59,13 @@ class AnnotationCountError(RegisterTypeError):
 
     _text = 'Register object has more args with annotation than default.'
     _code = 204
+
+
+class ArgumentNameError(RegisterTypeError):
+    """Exception raise if overloader is strict and register object args names
+    is not map to default object args names."""
+
+    __slots__ = ()
+
+    _text = 'Register object and default object has different arguments names.'
+    _code = 205
