@@ -6,7 +6,10 @@ from overload.exception.type import UnknownType
 from .data import (
     out_up_types_types_and_expectations,
     set_custom_type_index,
+    mapping_type,
 )
+
+set_custom_type_handler = _TypeHandler()
 
 
 @pytest.mark.type
@@ -26,15 +29,13 @@ def test_get_type_index():
     set_custom_type_index,
 )
 def test_set_custom_type_index(exception, type_, index):
-    handler = _TypeHandler()
-
     if exception:
         with pytest.raises(exception):
-            handler[type_] = index
+            set_custom_type_handler[type_] = index
     else:
-        new_index = handler[type_] = index
+        new_index = set_custom_type_handler[type_] = index
         assert new_index == index
-        assert new_index == handler[type_]
+        assert new_index == set_custom_type_handler[type_]
 
 
 @pytest.mark.type
@@ -46,3 +47,21 @@ def test_out_up_types(input_type, expected):
     handler = _TypeHandler()
     type_ = handler.out_up_types(input_type)
     assert type_ == expected
+
+
+@pytest.mark.type
+@pytest.mark.parametrize(
+    'type_,add_unknown,exception,mapped_type',
+    mapping_type,
+)
+def test_mapping_type(type_, add_unknown, exception, mapped_type):
+    handler = _TypeHandler()
+
+    type_ = handler.out_up_types(type_)
+
+    if exception:
+        with pytest.raises(exception):
+            handler._mapping_type(type_)
+
+    else:
+        assert mapped_type == handler._mapping_type(type_, add_unknown)

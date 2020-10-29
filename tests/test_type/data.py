@@ -7,6 +7,7 @@ from overload.exception.type import (
     CustomTypeError,
     CustomTypeAlreadyExist,
     IndexValueError,
+    UnknownType,
 )
 
 
@@ -177,4 +178,16 @@ set_custom_type_index = [
     (IndexValueError, _UnknownType2, 99),
     (IndexValueError, _UnknownType2, 'test'),
     (IndexValueError, _UnknownType2, 100),
+]
+
+mapping_type = [
+    # format: type_, add_unknown, exception, mapped_type
+    (bytes, False, None, _Type(1)),
+    (typing.List[str], False, None, _Type(7, _Type(3))),
+    (typing.Dict[str, typing.Optional[set]], False, None,
+     _Type(6, (_Type(8), _Type(0)), _Type(3))),
+    # Unknown type and forbidden add new types
+    (_UnknownType1, False, UnknownType, None),
+    # Unknown type and allowed add new types
+    (_UnknownType1, True, None, _Type(100)),
 ]
