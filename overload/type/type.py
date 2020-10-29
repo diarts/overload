@@ -291,3 +291,53 @@ class _TypeHandler:
             real_type = type_
 
         return types or _Type(real_type, v_types, k_types, m_v)
+
+    def _mapping_type(self, type_: _Type, add_unknown=False) -> _Type:
+        """Convert _Type object to _Type with indexes of arg type, value types
+        and key types.
+
+        Example:
+            inputs format:
+                _Type(
+                    type_ = int,
+                    v_types = (
+                        _Type(str),
+                        _Type(list, (str), None),
+                    k_types = None
+                )
+            return format:
+                _Type(
+                    type_ = 3,
+                    v_types = _Type(4), _Type(3, _Type(7)),
+                    k_type = None
+                )
+        """
+        # map type
+        try:
+            type_.type = self[type_.type]
+        except UnknownType:
+            if add_unknown:
+                self[type_.type] = None
+                type_.type = self._last_custom_types_id
+            else:
+                raise UnknownType(type_.type)
+
+        # map v_types
+        if type_.v_types:
+            try:
+                type_.v_types = tuple(
+                    self._mapping_type(v) for v in type_.v_types
+                )
+            except TypeError:
+                type_.v_types = self._mapping_type(type_.v_types)
+
+        # map k_types
+        if type_.k_types:
+            try:
+                type_.k_types = tuple(
+                    self._mapping_type(k) for k in type_.k_types
+                )
+            except TypeError:
+                type_.k_types = self._mapping_type(type_.k_types)
+
+        return type_
