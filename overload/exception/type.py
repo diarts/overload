@@ -28,7 +28,7 @@ class UnknownType(TypeException):
     _text = 'Unknown type was found: {type}'
     _code = 101
 
-    def __init__(self, type_: type):
+    def __init__(self, type_: Any):
         """
         Args:
             type_ (type): Founded unknown type.

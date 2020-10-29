@@ -36,10 +36,6 @@ from collections import (
     defaultdict,
     OrderedDict,
 )
-from types import (
-    FunctionType,
-    CoroutineType,
-)
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
 
 from overload.exception.type import *
@@ -61,9 +57,9 @@ class _Type:
             k_types: Optional[Union['_Type', Tuple['_Type', ...]]] = None,
             can_mixed_v: bool = True,
     ):
-        self._type = type_
-        self._v_types = v_types
-        self._k_types = k_types
+        self.type = type_
+        self.v_types = v_types
+        self.k_types = k_types
         self._can_mixed_v = can_mixed_v
 
     def __eq__(self, other: '_Type') -> bool:
@@ -79,12 +75,17 @@ class _Type:
         return same_type and same_v_types and same_k_types and same_m_v
 
     @property
-    def type(self):
+    def type(self) -> type or TypeVar:
         """Stored type, can be instance of type or typing.TypeVar class."""
         return self._type
 
+    @type.setter
+    def type(self, type_: int) -> None:
+        """Setter must use only for mapping."""
+        self._type = type_
+
     @property
-    def v_types(self):
+    def v_types(self) -> Union['_Type', Tuple['_Type', ...]]:
         """Expected types of variables, who contains into instance of
         stored type.
         Only for instance of typing.TypeVar class, who can take parameters.
@@ -96,8 +97,13 @@ class _Type:
         """
         return self._v_types
 
+    @v_types.setter
+    def v_types(self, types: Union['_Type', Tuple['_Type', ...]]) -> None:
+        """Setter must use only for mapping."""
+        self._v_types = types
+
     @property
-    def k_types(self):
+    def k_types(self) -> Union['_Type', Tuple['_Type', ...]]:
         """Expected types of keys, who contains into instance of stored type.
         Only for instance of typing.TypeVar class,
         who can take key, value parameters.
@@ -109,8 +115,13 @@ class _Type:
         """
         return self._k_types
 
+    @k_types.setter
+    def k_types(self, types: Union['_Type', Tuple['_Type', ...]]) -> None:
+        """Setter must use only for mapping."""
+        self._k_types = types
+
     @property
-    def can_mixed_v(self):
+    def can_mixed_v(self) -> bool:
         """Flag, about can mixed value types or must be an strict sequence."""
         return self._can_mixed_v
 
@@ -139,8 +150,8 @@ class _TypeHandler:
         Optional: Any,
     }
 
-    __custom_types__ = {}
-    __last_custom_types_id = 99
+    __custom_types__ = None
+    _last_custom_types_id = 99
 
     __slots__ = ('__dict__',)
 
@@ -149,6 +160,9 @@ class _TypeHandler:
 
     def __str__(self) -> str:
         return 'Handler for python3 base types and types from typing module.'
+
+    def __init__(self):
+        self.__custom_types__ = {}
 
     def __getitem__(self, type_) -> int:
         """Convert python3 type to overload module type id."""
@@ -165,6 +179,7 @@ class _TypeHandler:
         if type(type_) is not type:
             raise CustomTypeError(type_)
 
+        # check new type to exist it current mapper
         try:
             self[type_]
         except UnknownType:
@@ -172,16 +187,20 @@ class _TypeHandler:
         else:
             raise CustomTypeAlreadyExist(type_, self[type_])
 
+        # validate new index
         if index and (
                 type(index) is not int
                 or index in range(0, 100)
                 or index in self.__custom_types__.values()):
             raise IndexValueError()
 
-        self.__last_custom_types_id += 1
-        self.__custom_types__[type_] = self.__last_custom_types_id
+        # update last index
+        if index and index > self._last_custom_types_id:
+            self._last_custom_types_id = index
+        else:
+            self._last_custom_types_id += 1
 
-        return self.__last_custom_types_id
+        self.__custom_types__[type_] = self._last_custom_types_id
 
     @cached_property
     def mapper(self) -> ChainMap:
@@ -252,11 +271,14 @@ class _TypeHandler:
                     try:
                         # Only typing.Tuple can contain fixed count of types
                         if real_type is tuple and len(type_.__args__) > 1:
-                            v_types = tuple(
-                                self.out_up_types(inner_type)
-                                for inner_type in type_.__args__
-                            )
-                            m_v = False
+                            if type_.__args__[-1] is Ellipsis:
+                                v_types = self.out_up_types(type_.__args__[0])
+                            else:
+                                v_types = tuple(
+                                    self.out_up_types(inner_type)
+                                    for inner_type in type_.__args__
+                                )
+                                m_v = False
                         else:
                             v_types = self.out_up_types(type_.__args__[-1])
 
