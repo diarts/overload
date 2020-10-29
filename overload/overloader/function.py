@@ -29,11 +29,11 @@ class FunctionOverloader(Overloader):
         super().__init__(overload_function, strict)
 
     def __repr__(self):
-        return ('<Function Overload class> '
-                f'implementation count = {len(self.varieties)}.')
+        return ("<class 'FunctionOverloader'>"
+                f' implementation count = {len(self.varieties)}.')
 
     def __str__(self):
-        return 'Function/coroutine overloading class.'
+        return f'Overloader for function {self.default}.'
 
     def __call__(self, *args, **kwargs):
         return self.default(*args, **kwargs)

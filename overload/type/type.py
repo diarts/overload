@@ -47,9 +47,12 @@ class _Type:
     __slots__ = ('_type', '_v_types', '_k_types', '_can_mixed_v')
 
     def __repr__(self):
-        return (f'<class Overload Type> type={self.type} '
+        return (f"<class 'OverloadType'> type={self.type} "
                 f'v_types={self.v_types} k_types={self.k_types} '
                 f'can_mixed_v={self.can_mixed_v}')
+
+    def __str__(self):
+        return f"_Type({self.type})"
 
     def __init__(
             self, type_: Union[type, TypeVar],
@@ -91,8 +94,7 @@ class _Type:
         Only for instance of typing.TypeVar class, who can take parameters.
 
         Example:
-            for typing.TypeVar instance typing.List[str]
-            v_types is 'str'.
+            for typing.TypeVar instance typing.List[str], v_types is 'str'.
 
         """
         return self._v_types
@@ -109,7 +111,7 @@ class _Type:
         who can take key, value parameters.
 
         Example:
-            for typing.TypeVar instance typing.Dict[int, str]
+            for typing.TypeVar instance typing.Dict[int, str],
             k_types is 'int'.
 
         """
@@ -156,7 +158,7 @@ class _TypeHandler:
     __slots__ = ('__dict__',)
 
     def __repr__(self) -> str:
-        return '<class Type Handler>'
+        return "<class 'TypeHandler'>"
 
     def __str__(self) -> str:
         return 'Handler for python3 base types and types from typing module.'
@@ -297,7 +299,7 @@ class _TypeHandler:
         and key types.
 
         Example:
-            inputs format:
+            input format:
                 _Type(
                     type_ = int,
                     v_types = (

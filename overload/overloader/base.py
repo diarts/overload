@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Callable
 from abc import ABCMeta, abstractmethod
 
 from overload.type.type import _TypeHandler
@@ -16,14 +16,14 @@ class Overloader(metaclass=ABCMeta):
 
     _strict = False
 
-    def __init__(self, overload_object: Any, strict: bool = False):
+    def __init__(self, overload_object: Callable, strict: bool = False):
         self.default = overload_object
         self._strict = strict
         self._varieties = []
         self.__type_handler__ = self.__type_handler__()
 
     def __repr__(self):
-        return '<Overload class>'
+        return "<class 'Overloader'>"
 
     @property
     def is_strict(self):
@@ -32,12 +32,12 @@ class Overloader(metaclass=ABCMeta):
         return self._strict
 
     @property
-    def default(self) -> Any:
+    def default(self) -> Callable:
         """Default object, who was overload."""
         return self._default
 
     @default.setter
-    def default(self, obj: Any):
+    def default(self, obj: Callable):
         """Register new implementation of overload object as default
         implementation."""
         self._default = obj
