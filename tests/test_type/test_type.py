@@ -40,11 +40,11 @@ def test_set_custom_type_index(exception, type_, index):
 
 @pytest.mark.type
 @pytest.mark.parametrize(
-    'input_type,expected',
+    'deep,input_type,expected',
     out_up_types_types_and_expectations,
 )
-def test_out_up_types(input_type, expected):
-    handler = _TypeHandler()
+def test_out_up_types(deep, input_type, expected):
+    handler = _TypeHandler(deep=deep)
     type_ = handler.out_up_types(input_type)
     assert type_ == expected
 
@@ -55,7 +55,7 @@ def test_out_up_types(input_type, expected):
     mapping_type,
 )
 def test_mapping_type(type_, add_unknown, exception, mapped_type):
-    handler = _TypeHandler()
+    handler = _TypeHandler(deep=True)
 
     type_ = handler.out_up_types(type_)
 
@@ -64,4 +64,5 @@ def test_mapping_type(type_, add_unknown, exception, mapped_type):
             handler._mapping_type(type_)
 
     else:
-        assert mapped_type == handler._mapping_type(type_, add_unknown)
+        res = handler._mapping_type(type_, add_unknown)
+        assert mapped_type == res

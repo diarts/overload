@@ -155,7 +155,7 @@ class _TypeHandler:
     __custom_types__ = None
     _last_custom_types_id = 99
 
-    __slots__ = ('__dict__',)
+    __slots__ = ('__dict__', '_deep')
 
     def __repr__(self) -> str:
         return "<class 'TypeHandler'>"
@@ -163,8 +163,24 @@ class _TypeHandler:
     def __str__(self) -> str:
         return 'Handler for python3 base types and types from typing module.'
 
-    def __init__(self):
+    def __init__(self, deep=False):
+        """
+        Args:
+            deep (Bool, optional): Check inner field types of arguments (True)
+                or only arguments types (False).
+                Default value = False.
+
+                example deep=True:
+                    List[str] -> _Type(
+                            type=list,
+                            v_type=(_Type(str)
+                        ))
+                example deep=False:
+                    List[str] -> _Type(list)
+
+        """
         self.__custom_types__ = {}
+        self._deep = deep
 
     def __getitem__(self, type_) -> int:
         """Convert python3 type to overload module type id."""
@@ -176,7 +192,7 @@ class _TypeHandler:
             except KeyError:
                 raise UnknownType(type_)
 
-    def __setitem__(self, type_: type, index: int = None) -> int:
+    def __setitem__(self, type_: type, index: int = None):
         """Add new type item into __custom_types__ dict."""
         if type(type_) is not type:
             raise CustomTypeError(type_)
@@ -267,7 +283,7 @@ class _TypeHandler:
                 types = tuple(
                     self.out_up_types(type_) for type_ in type_.__args__
                 )
-            else:
+            elif self._deep:
                 # # handling function types
                 if real_type not in self._IGNORED_OBJECTS:
                     try:
