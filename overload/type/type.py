@@ -40,6 +40,8 @@ from contextlib import AbstractContextManager, AbstractAsyncContextManager
 
 from overload.exception.type import *
 
+__all__ = ()
+
 
 class _Type:
     """Class contained overloading type and it parameters
@@ -67,12 +69,21 @@ class _Type:
 
     def __eq__(self, other: '_Type') -> bool:
         if not isinstance(other, _Type):
-            # not support not _Type class instance
+            # Do not support not _Type class instance
             raise NotImplemented
 
         same_type = self.type == other.type
-        same_v_types = self.v_types == other.v_types
-        same_k_types = self.v_types == other.v_types
+
+        if other.v_types:
+            same_v_types = self.v_types == other.v_types
+        else:
+            same_v_types = True
+
+        if other.k_types:
+            same_k_types = self.k_types == other.k_types
+        else:
+            same_k_types = True
+
         same_m_v = self.can_mixed_v == other.can_mixed_v
 
         return same_type and same_v_types and same_k_types and same_m_v
