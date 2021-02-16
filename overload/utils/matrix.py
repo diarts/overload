@@ -2,7 +2,7 @@ from typing import List, Dict, Tuple, Union, Callable
 
 from overload.type.type import _Type
 from overload.exception.matrix import (
-    ImplementationError,
+    ImplementationAlreadyRegistered,
     ImplementationIndexError,
     ImplementationNotFound,
 )
@@ -53,13 +53,13 @@ class _OverloadMatrix:
 
         """
         if callable_ in self.columns:
-            raise ImplementationError()
+            raise ImplementationAlreadyRegistered()
 
-        # add new column
+        # Add new column.
         new_imp_index = len(self.columns)
         self.columns.append(callable_)
 
-        # update rows
+        # Update rows.
         for arg, types in args.items():
             try:
                 self.rows[arg].append(types)
@@ -80,3 +80,45 @@ class _OverloadMatrix:
                 raise ImplementationIndexError(type(imp_id), imp_id)
             else:
                 raise ImplementationNotFound(imp_id)
+
+    def find(self, args: List[_Type], kwargs: Dict[str, _Type]) -> Callable:
+        """Find function in overload matrix by it arguments types.
+
+        Returns:
+            Callable: function who matched with arguments or default function.
+
+        """
+        # Check kwargs types.
+        kwargs_imps = {index for index in range(len(self.rows[0]))}
+
+        for arg, type_ in kwargs.items():
+            # Get indexes of matched implementations.
+            for index in kwargs_imps.copy():
+                if self.rows[arg][index] != type_:
+                    kwargs_imps.remove(index)
+
+            # Not found implementation with current kwargs.
+            if not kwargs_imps:
+                raise ValueError
+
+        # Found implementations with current kwargs. Check args types.
+        args_imps = kwargs_imps
+
+        # Get indexes of matched implementations.
+        iter_args = iter(args)
+        for arg, list_ in self.rows.items():
+            # Kwargs type.
+            if arg in kwargs:
+                continue
+            try:
+                for index in args_imps.copy():
+                    if list_[index] != next(iter_args):
+                        args_imps.remove(index)
+            except StopIteration:
+                break
+
+        if not args_imps:
+            raise ImplementationNotFound(args=args, kwargs=kwargs)
+
+        else:
+            return self.implementation(tuple(args_imps)[0])

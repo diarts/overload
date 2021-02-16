@@ -1,10 +1,10 @@
-from typing import Any
+from typing import Any, List, Dict
 
 from .base import OverloadException
 
 __all__ = (
     'MatrixError',
-    'ImplementationError',
+    'ImplementationAlreadyRegistered',
     'ImplementationIndexError',
     'ImplementationNotFound',
 )
@@ -19,7 +19,7 @@ class MatrixError(OverloadException):
     _code = 300
 
 
-class ImplementationError(MatrixError):
+class ImplementationAlreadyRegistered(MatrixError):
     """Raise when add implementation already contain in matrix."""
 
     __slots__ = ()
@@ -48,8 +48,13 @@ class ImplementationNotFound(MatrixError):
 
     __slots__ = ()
 
-    _text = 'Implementation with id={id} not contain in matrix.'
+    _text = 'Implementation with {parameter} not contain in matrix.'
     _code = 303
 
-    def __init__(self, id_: int):
-        super().__init__(self._text.format(id=id_))
+    def __init__(self, id_: int = None, args: List[_Type] = None,
+                 kwargs: Dict[str, _Type] = None):
+        if id_:
+            parameter = f'id={id_}'
+        else:
+            parameter = f'args={args} and kwargs={kwargs}'
+        super().__init__(self._text.format(parameter=parameter))
