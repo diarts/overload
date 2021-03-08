@@ -21,13 +21,12 @@ class ABSImplementation(metaclass=ABCMeta):
         overload (Any): Overload object.
 
     """
-    __slots__ = ('_implementation', '_overload', '_strict', '__annotations__')
+    __slots__ = ('_implementation', '_strict', '__annotations__')
 
     def __init__(self, implementation: Any, annotations: Dict[str, _Type],
-                 overload: Any, strict: bool = False) -> None:
+                 strict: bool = False) -> None:
         self.__annotations__: Dict[str, _Type] = annotations
         self._implementation = implementation
-        self._overload = overload
         self._strict = strict
 
     @property

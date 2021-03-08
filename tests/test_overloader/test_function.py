@@ -14,4 +14,4 @@ def test_validation_of_register_func(default, strict, new_func, exception):
     overloader = FunctionOverloader(default, strict)
 
     with pytest.raises(exception):
-        overloader._validate_register_func(new_func)
+        overloader._validate_register_object(new_func)

@@ -4,14 +4,12 @@ from overload.type.type import _Type
 _STRICT_TEST_FUNCTION_IMPLEMENTATION = FunctionImplementation(
     implementation=None,
     annotations={'test': _Type(int), 'test2': _Type(str)},
-    overload=None,
     strict=True,
 )
 
 _UNSTRICT_TEST_FUNCTION_IMPLEMENTATION = FunctionImplementation(
     implementation=None,
     annotations={'test': _Type(int), 'test2': _Type(str)},
-    overload=None,
     strict=False,
 )
 

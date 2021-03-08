@@ -5,7 +5,7 @@ except ImportError:
 
 from typing import (
     NamedTupleMeta,
-    AnyStr,
+    Dict,
     Any,
     Union,
     Optional,
@@ -29,16 +29,7 @@ from collections.abc import (
     Generator,
     AsyncGenerator,
 )
-from collections import (
-    ChainMap,
-    Counter,
-    deque,
-    defaultdict,
-    OrderedDict,
-)
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
-
-from overload.exception.type import *
 
 __all__ = ()
 
@@ -163,8 +154,6 @@ class _TypeHandler:
         Optional: Any,
     }
 
-    __custom_types__ = None
-
     __slots__ = ('__dict__', '_deep')
 
     def __repr__(self) -> str:
@@ -228,3 +217,13 @@ class _TypeHandler:
             real_type = self._TO_ANY_CONVERT.get(type_) or type_
 
         return types or _Type(real_type, v_types, k_types, m_v)
+
+    def converting_annotations(
+            self,
+            annotations: Dict[str, type],
+    ) -> Dict[str, _Type]:
+        """Converting annotations types to overloader types."""
+        for parameter, type_ in annotations.items():
+            annotations[parameter] = self.out_up_types(type_)
+
+        return annotations
