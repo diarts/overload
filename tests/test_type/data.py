@@ -3,12 +3,6 @@ import collections
 import contextlib
 
 from overload.type.type import _Type
-from overload.exception.type import (
-    CustomTypeError,
-    CustomTypeAlreadyExist,
-    IndexValueError,
-    UnknownType,
-)
 
 
 class _UnknownType1:
@@ -50,49 +44,49 @@ out_up_types_types_and_expectations = [
     )),
     # 6
     (True, dict, _Type(dict)),
-    (True, typing.Dict, _Type(dict, _Type(typing.VT), _Type(typing.KT))),
+    (True, typing.Dict, _Type(dict, _Type(typing.Any), _Type(typing.Any))),
     (True, typing.Dict[str, int], _Type(dict, _Type(int), _Type(str))),
     # 7
     (True, list, _Type(list)),
-    (True, typing.List, _Type(list, _Type(typing.T))),
+    (True, typing.List, _Type(list, _Type(typing.Any))),
     (True, typing.List[int], _Type(list, _Type(int))),
     # 8
     (True, set, _Type(set)),
-    (True, typing.Set, _Type(set, _Type(typing.T))),
+    (True, typing.Set, _Type(set, _Type(typing.Any))),
     (True, typing.Set[int], _Type(set, _Type(int))),
     (False, typing.Set[int], _Type(set)),
     # 9
     (True, frozenset, _Type(frozenset)),
-    (True, typing.FrozenSet, _Type(frozenset, _Type(typing.T_co))),
+    (True, typing.FrozenSet, _Type(frozenset, _Type(typing.Any))),
     (True, typing.FrozenSet[int], _Type(frozenset, _Type(int))),
     # Collections types
     # 21
     (True, collections.ChainMap, _Type(collections.ChainMap)),
-    (True, typing.ChainMap, _Type(collections.ChainMap, _Type(typing.VT),
-                                  _Type(typing.KT))),
+    (True, typing.ChainMap, _Type(collections.ChainMap, _Type(typing.Any),
+                                  _Type(typing.Any))),
     (True, typing.ChainMap[str, int], _Type(collections.ChainMap, _Type(int),
                                             _Type(str))),
     # 22
     (True, collections.Counter, _Type(collections.Counter)),
-    (True, typing.Counter, _Type(collections.Counter, _Type(typing.T))),
+    (True, typing.Counter, _Type(collections.Counter, _Type(typing.Any))),
     (True, typing.Counter[int], _Type(collections.Counter, _Type(int))),
     # 23
     (True, collections.deque, _Type(collections.deque)),
-    (True, typing.Deque, _Type(collections.deque, _Type(typing.T))),
+    (True, typing.Deque, _Type(collections.deque, _Type(typing.Any))),
     (True, typing.Deque[int], _Type(collections.deque, _Type(int))),
     # 24
     (True, collections.defaultdict, _Type(collections.defaultdict)),
     (True, typing.DefaultDict, _Type(collections.defaultdict,
-                                     _Type(typing.VT),
-                                     _Type(typing.KT))),
+                                     _Type(typing.Any),
+                                     _Type(typing.Any))),
     (True, typing.DefaultDict[str, int], _Type(collections.defaultdict,
                                                _Type(int),
                                                _Type(str))),
     # 25
     (True, collections.OrderedDict, _Type(collections.OrderedDict)),
     (True, typing.OrderedDict, _Type(collections.OrderedDict,
-                                     _Type(typing.VT),
-                                     _Type(typing.KT))),
+                                     _Type(typing.Any),
+                                     _Type(typing.Any))),
     (True, typing.OrderedDict[str, int], _Type(collections.OrderedDict,
                                                _Type(int),
                                                _Type(str))),
@@ -141,10 +135,10 @@ out_up_types_types_and_expectations = [
     # Any
     (True, typing.Any, _Type(typing.Any)),
     # Optional
-    (True, typing.Optional, _Type(typing.Optional)),
+    (True, typing.Optional, _Type(typing.Any)),
     (True, typing.Optional[str], (_Type(str), _Type(type(None)))),
     # Union
-    (True, typing.Union, (_Type(typing.Union))),
+    (True, typing.Union, (_Type(typing.Any))),
     (True, typing.Union[str, int], (_Type(str), _Type(int))),
     # Deep mixed type
     (True, typing.List[
@@ -174,29 +168,14 @@ out_up_types_types_and_expectations = [
      ),
     # Unknown type
     (True, _UnknownType1, _Type(_UnknownType1)),
-]
-
-set_custom_type_index = [
-    # format: exception, type_, index
-    # type errors
-    (CustomTypeError, 5, None),
-    (CustomTypeAlreadyExist, int, None),
-    # correct add
-    (None, _UnknownType1, 100),
-    # index errors
-    (IndexValueError, _UnknownType2, 99),
-    (IndexValueError, _UnknownType2, 'test'),
-    (IndexValueError, _UnknownType2, 100),
-]
-
-mapping_type = [
-    # format: type_, add_unknown, exception, mapped_type
-    (bytes, False, None, _Type(1)),
-    (typing.List[str], False, None, _Type(7, _Type(3))),
-    (typing.Dict[str, typing.Optional[set]], False, None,
-     _Type(6, (_Type(8), _Type(0)), _Type(3))),
-    # Unknown type and forbidden add new types
-    (_UnknownType1, False, UnknownType, None),
-    # Unknown type and allowed add new types
-    (_UnknownType1, True, None, _Type(100)),
+    # Not deep mixed type
+    (False, typing.List[
+        typing.Union[str, typing.Tuple[
+            typing.Dict[int, typing.Optional[
+                typing.Callable
+            ]]
+        ]]
+    ],
+     _Type(list)
+     ),
 ]

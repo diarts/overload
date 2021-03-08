@@ -164,7 +164,6 @@ class _TypeHandler:
     }
 
     __custom_types__ = None
-    _last_custom_types_id = 99
 
     __slots__ = ('__dict__', '_deep')
 
@@ -190,98 +189,7 @@ class _TypeHandler:
                     List[str] -> _Type(list)
 
         """
-        self.__custom_types__ = {}
         self._deep = deep
-
-    def __getitem__(self, type_) -> int:
-        """Convert python3 type to overload module type id."""
-        try:
-            return self.mapper[type_]
-        except KeyError:
-            try:
-                return self.__custom_types__[type_]
-            except KeyError:
-                raise UnknownType(type_)
-
-    def __setitem__(self, type_: type, index: int = None):
-        """Add new type item into __custom_types__ dict."""
-        if type(type_) is not type:
-            raise CustomTypeError(type_)
-
-        # check new type to exist it current mapper
-        try:
-            self[type_]
-        except UnknownType:
-            pass
-        else:
-            raise CustomTypeAlreadyExist(type_, self[type_])
-
-        # validate new index
-        if index and (
-                type(index) is not int
-                or index in range(0, 100)
-                or index in self.__custom_types__.values()):
-            raise IndexValueError()
-
-        # update last index
-        if index and index > self._last_custom_types_id:
-            self._last_custom_types_id = index
-        else:
-            self._last_custom_types_id += 1
-
-        self.__custom_types__[type_] = self._last_custom_types_id
-
-    @cached_property
-    def mapper(self) -> ChainMap:
-        """Mapping type to id."""
-        native = {
-            type(None): 0,
-            None: 0,
-            bytes: 1,
-            ByteString: 1,
-            bytearray: 2,
-            str: 3,
-            int: 4,
-            tuple: 5,
-            dict: 6,
-            list: 7,
-            set: 8,
-            frozenset: 9,
-        }
-        collections = {
-            ChainMap: 21,
-            Counter: 22,
-            deque: 23,
-            defaultdict: 24,
-            OrderedDict: 25,
-        }
-        objects = {
-            Callable: 31,
-            Coroutine: 32,
-            Iterator: 33,
-            AsyncIterator: 34,
-            Generator: 35,
-            AsyncGenerator: 36,
-            AbstractContextManager: 37,
-            AbstractAsyncContextManager: 38,
-        }
-        any_str = frozenset({
-            native[str],
-            native[bytes],
-            native[ByteString],
-        })
-
-        any_ = set(native.values())
-        any_ |= set(collections.values())
-        any_ |= set(objects.values())
-        any_ |= any_str
-        any_ = frozenset(any_)
-
-        multiplicity = {
-            AnyStr: any_str,
-            Any: any_,
-        }
-        return ChainMap(native, collections, objects, multiplicity)
 
     def out_up_types(self, type_: Any) -> dict or Tuple[dict, ...]:
         """Convert type to _Type instance or tuple with _Type instances."""
@@ -317,56 +225,6 @@ class _TypeHandler:
                     except IndexError:
                         pass
         except AttributeError:
-            real_type = type_
+            real_type = self._TO_ANY_CONVERT.get(type_) or type_
 
         return types or _Type(real_type, v_types, k_types, m_v)
-
-    def _mapping_type(self, type_: _Type, add_unknown=False) -> _Type:
-        """Convert _Type object to _Type with indexes of arg type, value types
-        and key types.
-
-        Example:
-            input format:
-                _Type(
-                    type_ = int,
-                    v_types = (
-                        _Type(str),
-                        _Type(list, (str), None),
-                    k_types = None
-                )
-            return format:
-                _Type(
-                    type_ = 3,
-                    v_types = _Type(4), _Type(3, _Type(7)),
-                    k_type = None
-                )
-        """
-        # map type
-        try:
-            type_.type = self[type_.type]
-        except UnknownType:
-            if add_unknown:
-                self[type_.type] = None
-                type_.type = self._last_custom_types_id
-            else:
-                raise UnknownType(type_.type)
-
-        # map v_types
-        if type_.v_types:
-            try:
-                type_.v_types = tuple(
-                    self._mapping_type(v) for v in type_.v_types
-                )
-            except TypeError:
-                type_.v_types = self._mapping_type(type_.v_types)
-
-        # map k_types
-        if type_.k_types:
-            try:
-                type_.k_types = tuple(
-                    self._mapping_type(k) for k in type_.k_types
-                )
-            except TypeError:
-                type_.k_types = self._mapping_type(type_.k_types)
-
-        return type_
