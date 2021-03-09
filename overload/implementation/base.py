@@ -7,7 +7,7 @@ from overload.type.type import _Type
 __all__ = ()
 
 
-class ABSImplementation(metaclass=ABCMeta):
+class ABCImplementation(metaclass=ABCMeta):
     """Base overload object implementation class.
 
     Attrs:
@@ -41,7 +41,7 @@ class ABSImplementation(metaclass=ABCMeta):
         return f'Implementation of {self.implementation}'
 
     def __eq__(self, other) -> bool:
-        if isinstance(other, ABSImplementation):
+        if isinstance(other, ABCImplementation):
             return self.__annotations__ == other.__annotations__
         else:
             raise TypeError(

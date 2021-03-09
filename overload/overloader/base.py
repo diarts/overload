@@ -1,31 +1,77 @@
-from typing import Any, Callable
+from typing import Any, List
 from abc import ABCMeta, abstractmethod
 
 from overload.exception.overloader import (
     AnnotationCountError,
     ArgumentNameError,
+    OverlappingError,
 )
 from overload.type.type import _TypeHandler
-from overload.implementation.base import ABSImplementation
+from overload.implementation.base import ABCImplementation
 from overload.exception.overloader import MissedAnnotations
 
 
-class Overloader(metaclass=ABCMeta):
+class ABCOverloader(metaclass=ABCMeta):
     """Base overload class. This class getting default object and register
     many implementations for it, based at their arguments types.
     When calling overloaded object, runned it implementation, who arguments
-    types match with call arguments types."""
+    types match with call arguments types.
 
-    __slots__ = ('_default', '_varieties', '__dict__',)
+    Class attributes:
+        __implementation_class__ (Any): Wrapper class, for overload object
+            implementations.
 
-    __type_handler__ = _TypeHandler
-    __implementation_class__ = ABSImplementation
+    Attributes:
+        __type_handler__ (_TypeHandler): Annotation converting class.
 
-    _strict = False
+    Args:
+        overload_object (Any): Overload object.
+        strict (bool): Activate validation of implementation annotations count
+            and it priority compared overload object annotations.
+        overlapping (bool): Activate registration of implementation with
+            same annotations as the default overload object.
+        deep (bool): Saving and validate implementation
+            and object calling parameter not only on top level.
 
-    def __init__(self, overload_object: Any, strict: bool = False):
+            Example saving annotations:
+                (deep = False)
+                var: dict[str, list[int]] -> var: dict
+                (deep = True)
+                var: dict[str, list[int]] -> var: dict[str, list[int]]
+
+            Example converting calling parameter:
+                (deep = False)
+                {'var': [1,2,3]} -> dict
+                (deep = True)
+                {'var':[1,2,3]} -> dict[str, list[int]]
+
+    """
+    __slots__ = (
+        '_default',
+        '_varieties',
+        '_strict',
+        '_overlapping',
+        '__type_handler__',
+    )
+
+    __implementation_class__: Any = ABCImplementation
+    __type_handler__: _TypeHandler
+
+    _varieties: List[Any]
+    _strict: bool
+    _overlapping: bool
+
+    def __init__(
+            self,
+            overload_object: Any,
+            strict: bool = False,
+            overlapping: bool = False,
+            deep: bool = False,
+    ):
+        self.__type_handler__ = _TypeHandler(deep=deep)
         self._strict = strict
-        self.__type_handler__ = self.__type_handler__()
+        self._overlapping = overlapping
+        self._varieties = []
 
         self._register_implementation(overload_object)
         self._default = self.varieties[-1]
@@ -35,18 +81,26 @@ class Overloader(metaclass=ABCMeta):
 
     @property
     def is_strict(self):
-        """Check 'typed args' count in register implementation is mapped with
-        count of 'typed args' in default object."""
+        """Validate 'typed args' count in register implementation is mapped
+        with count of 'typed args' in default object."""
         return self._strict
 
     @property
-    def default(self) -> Callable:
+    def default(self) -> __implementation_class__:
         """Default object, who was overload."""
         return self._default
 
     @property
     def varieties(self):
+        """Contain all implementations of overload object."""
         return self._varieties
+
+    @property
+    def can_overlapping(self) -> bool:
+        """If it is True, overloader can storage implementation with
+        same annotations as the default overload object.
+        """
+        return self._overlapping
 
     @abstractmethod
     def register(self, object_: Any):
@@ -88,3 +142,14 @@ class Overloader(metaclass=ABCMeta):
             for index, value in enumerate(object_.__annotations__):
                 if value != default_ann_keys[index]:
                     raise ArgumentNameError()
+
+        if not self.can_overlapping:
+            new_annotations = self.__type_handler__.converting_annotations(
+                annotations=object_.__annotations__,
+            )
+
+            for parameter, value in new_annotations.items():
+                if value != self.default.__annotations__[parameter]:
+                    break
+            else:
+                raise OverlappingError()

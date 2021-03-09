@@ -7,6 +7,7 @@ __all__ = (
     'MissedAnnotations',
     'AnnotationCountError',
     'ArgumentNameError',
+    'OverlappingError',
 )
 
 
@@ -69,3 +70,13 @@ class ArgumentNameError(RegisterTypeError):
 
     _text = 'Register object and default object has different arguments names.'
     _code = 205
+
+
+class OverlappingError(RegisterTypeError):
+    """Exceptions raise if implementation annotation is same as default
+    overload object annotations and overlapping is forbidden."""
+
+    __slots__ = ()
+
+    _text = 'Implementation annotations duplicate overloading object.'
+    _code = 206

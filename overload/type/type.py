@@ -180,7 +180,7 @@ class _TypeHandler:
         """
         self._deep = deep
 
-    def out_up_types(self, type_: Any) -> dict or Tuple[dict, ...]:
+    def out_up_types(self, type_: Any) -> Union[_Type, Tuple[_Type, ...]]:
         """Convert type to _Type instance or tuple with _Type instances."""
         types, real_type, v_types, k_types, m_v = None, None, None, None, True
 

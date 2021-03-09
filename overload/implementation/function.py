@@ -4,14 +4,14 @@ from collections import deque
 
 from overload.type.type import _Type
 
-from .base import ABSImplementation
+from .base import ABCImplementation
 
 __all__ = (
     'FunctionImplementation',
 )
 
 
-class FunctionImplementation(ABSImplementation):
+class FunctionImplementation(ABCImplementation):
     """Implementation for overload function."""
 
     def compare(
