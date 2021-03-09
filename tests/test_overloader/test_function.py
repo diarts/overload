@@ -1,17 +1,21 @@
 import pytest
 
-from overload.overloader.function import FunctionOverloader
+from overload.overloader.function import FunctionABCOverloader
 
 from .data import validation_of_register_func
 
 
 @pytest.mark.overloader
 @pytest.mark.parametrize(
-    'default,strict,new_func,exception',
+    'default,strict,overlap,new_func,exception',
     validation_of_register_func,
 )
-def test_validation_of_register_func(default, strict, new_func, exception):
-    overloader = FunctionOverloader(default, strict)
+def test_validation_of_register_func(default, strict, overlap, new_func,
+                                     exception):
+    overloader = FunctionABCOverloader(default, strict, overlap)
 
-    with pytest.raises(exception):
-        overloader._validate_register_object(new_func)
+    if exception:
+        with pytest.raises(exception):
+            overloader._validate_register_object(new_func)
+    else:
+        assert not overloader._validate_register_object(new_func)
