@@ -142,12 +142,12 @@ OUT_UP_TYPES_AND_EXPECTATIONS = (
 
 CONVERTING_ARGS = (
     # Format: args, result.
-    ((123, '123', [1, 2, 3]), (int, str, list)),
+    ((123, '123', [1, 2, 3]), (_Type(int), _Type(str), _Type(list))),
 )
 CONVERTING_KWARGS = (
     # Format: args, result.
     (
         {'int': 123, 'str': '123', 'list': [1, 2, 3]},
-        {'int': int, 'str': str, 'list': list}
+        {'int': _Type(int), 'str': _Type(str), 'list': _Type(list)}
     ),
 )

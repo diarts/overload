@@ -1,6 +1,6 @@
 import pytest
 
-from overload.overloader.function import FunctionABCOverloader
+from overload.overloader.function import FunctionOverloader
 
 from .data import validation_of_register_func
 
@@ -12,7 +12,7 @@ from .data import validation_of_register_func
 )
 def test_validation_of_register_func(default, strict, overlap, new_func,
                                      exception):
-    overloader = FunctionABCOverloader(default, strict, overlap)
+    overloader = FunctionOverloader(default, strict, overlap)
 
     if exception:
         with pytest.raises(exception):

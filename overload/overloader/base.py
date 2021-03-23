@@ -51,13 +51,12 @@ class ABCOverloader(metaclass=ABCMeta):
         '_varieties',
         '_strict',
         '_overlapping',
-        '__type_handler__',
     )
 
     __implementation_class__: Any = ABCImplementation
-    __type_handler__: _TypeHandler
+    __type_handler__: _TypeHandler = _TypeHandler()
 
-    _varieties: List[Any]
+    _varieties: List[__implementation_class__]
     _strict: bool
     _overlapping: bool
 
@@ -67,7 +66,6 @@ class ABCOverloader(metaclass=ABCMeta):
             strict: bool = False,
             overlapping: bool = False,
     ):
-        self.__type_handler__ = _TypeHandler()
         self._strict = strict
         self._overlapping = overlapping
         self._varieties = []
@@ -90,7 +88,7 @@ class ABCOverloader(metaclass=ABCMeta):
         return self._default
 
     @property
-    def varieties(self):
+    def varieties(self) -> List[__implementation_class__]:
         """Contain all implementations of overload object."""
         return self._varieties
 
@@ -102,13 +100,18 @@ class ABCOverloader(metaclass=ABCMeta):
         return self._overlapping
 
     @abstractmethod
-    def register(self, object_: Any):
+    def register(self, object_: Any) -> None:
         """Register new implementation of overload object
         by it argument types."""
         self._validate_register_object(object_)
         self._register_implementation(object_)
 
-    def as_default(self, object_: Any):
+    @abstractmethod
+    def _get_variety(self, *args, **kwargs) -> __implementation_class__:
+        """Finding implementation by args and kwargs types."""
+        pass
+
+    def as_default(self, object_: Any) -> None:
         """Register new implementation of overload object as default
         implementation."""
         self.register(object_)

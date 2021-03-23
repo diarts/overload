@@ -16,7 +16,7 @@ class FunctionImplementation(ABCImplementation):
 
     def compare(
             self,
-            named: Dict[str, Union[_Type]] = None,
+            named: Dict[str, _Type] = None,
             unnamed: Union[List[_Type], Tuple[_Type, ...]] = None,
     ) -> bool:
         """Comparing kwargs parameters and args with storage annotations.

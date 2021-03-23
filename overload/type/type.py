@@ -225,10 +225,9 @@ class _TypeHandler:
 
         return annotations
 
-    @staticmethod
-    def extract_type(value: Any) -> _Type:
+    def extract_type(self, value: Any) -> _Type:
         """Convert value to instance of _Type."""
-        return type(value)
+        return self.out_up_types(type(value))
 
     def converting_args(self, args: Tuple[Any, ...]) -> Tuple[_Type, ...]:
         """Converting all call args values to _Type instances."""
