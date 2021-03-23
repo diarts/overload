@@ -44,10 +44,15 @@ validation_of_register_func = (
     (default_func(), False, True, func_with_mixed_args, None),
     (default_func(), False, True, func_with_and_without_annotations, None),
     (default_func(), True, True, func_with_and_without_annotations, None),
+    (default_func(), False, False, func_without_annotation, None),
+    (default_func(), False, True, func_without_annotation, None),
 
     # Wrong parameters.
     (default_func(), False, True, int, FunctionRegisterTypeError),
-    (default_func(), False, True, func_without_annotation, MissedAnnotations),
+    (default_func(), True, False, func_without_annotation,
+     AnnotationCountError),
+    (default_func(), True, True, func_without_annotation,
+     AnnotationCountError),
     (default_func(), True, True, func_with_less_args, AnnotationCountError),
     (default_func(), True, True, func_with_mixed_args, ArgumentNameError),
     (default_func(), False, False, default_func(), OverlappingError),

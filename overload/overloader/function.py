@@ -1,4 +1,4 @@
-from typing import Tuple, Dict, cast
+from typing import Tuple, Dict
 from types import FunctionType
 from collections.abc import Callable
 
@@ -26,16 +26,17 @@ class FunctionOverloader(ABCOverloader):
         super().__init__(overload_function, *args, **kwargs)
 
     def __repr__(self):
-        return ("<class 'FunctionOverloader'>"
+        return (f"< Overloaded function {self.__origin_name__} >"
                 f' implementation count = {len(self.varieties)}.')
 
     def __str__(self):
-        return f'Overloader for function {self.default}.'
+        return f'< Overloaded "{self.__origin_name__}" >'
 
     def __call__(self, *args, **kwargs):
         args_types = self.__type_handler__.converting_args(args)
         kwargs_types = self.__type_handler__.converting_kwargs(kwargs)
-        return self._get_variety(args_types, kwargs_types)
+        implementation = self._get_variety(args_types, kwargs_types)
+        return implementation(*args, **kwargs)
 
     def register(self, function_: Callable) -> None:
         """Register new implementation of function/coroutine."""
@@ -52,8 +53,13 @@ class FunctionOverloader(ABCOverloader):
             self, args: Tuple[_Type, ...], kwargs: Dict[str, _Type],
     ) -> Callable:
         """Get compared function implementation."""
-        for implementation in reversed(self.varieties):
-            if implementation.compare(named=kwargs, unnamed=args):
-                return implementation
+        if args or kwargs:
+            for implementation in reversed(self.varieties):
+                if implementation.compare(named=kwargs, unnamed=args):
+                    return implementation
+        else:
+            for implementation in reversed(self.varieties):
+                if not implementation.__annotations__:
+                    return implementation
 
         return self.default

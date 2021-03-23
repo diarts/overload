@@ -217,13 +217,15 @@ class _TypeHandler:
             annotations: Dict[str, type],
     ) -> Dict[str, _Type]:
         """Converting annotations types to overloader types."""
+        new_annotations = {}
+
         for parameter, type_ in annotations.items():
-            annotations[parameter] = cast(type, self.out_up_types(type_))
+            new_annotations[parameter] = cast(type, self.out_up_types(type_))
 
         # Fake type converting.
-        annotations = cast(Dict[str, _Type], annotations)
+        new_annotations = cast(Dict[str, _Type], new_annotations)
 
-        return annotations
+        return new_annotations
 
     def extract_type(self, value: Any) -> _Type:
         """Convert value to instance of _Type."""
