@@ -3,13 +3,12 @@ try:
 except ImportError:
     from overload.utils.property import cached_property
 
+from types import FunctionType
 from typing import (
-    NamedTupleMeta,
     Dict,
     Any,
     Union,
     Optional,
-    _GenericAlias,
     T,
     VT,
     KT,
@@ -19,9 +18,10 @@ from typing import (
     T_contra,
     TypeVar,
     Tuple,
+    # Functions.
+    cast,
 )
 from collections.abc import (
-    ByteString,
     Callable,
     Coroutine,
     Iterator,
@@ -39,58 +39,21 @@ class _Type:
     for typing.TypeVar instance."""
     __slots__ = ('_type', '_v_types', '_k_types', '_can_mixed_v')
 
-    def __repr__(self):
-        return (f"<class 'OverloadType'> type={self.type} "
-                f'v_types={self.v_types} k_types={self.k_types} '
-                f'can_mixed_v={self.can_mixed_v}')
-
-    def __str__(self):
-        return f"_Type({self.type})"
-
     def __init__(
             self, type_: Union[type, TypeVar],
-            v_types: Optional[Union['_Type', Tuple['_Type', ...]]] = None,
-            k_types: Optional[Union['_Type', Tuple['_Type', ...]]] = None,
-            can_mixed_v: bool = True,
     ):
-        self.type = type_
-        self.v_types = v_types
-        self.k_types = k_types
-        self._can_mixed_v = can_mixed_v
-
-    def __eq__(self, other: '_Type') -> bool:
-        if not isinstance(other, _Type):
-            # Do not support not _Type class instance
-            raise NotImplemented
-
-        same_type = self.type == other.type
-
-        if other.v_types:
-            same_v_types = self.v_types == other.v_types
-        else:
-            same_v_types = True
-
-        if other.k_types:
-            same_k_types = self.k_types == other.k_types
-        else:
-            same_k_types = True
-
-        same_m_v = self.can_mixed_v == other.can_mixed_v
-
-        return same_type and same_v_types and same_k_types and same_m_v
+        self._type = type_
+        self._v_types = None
+        self._k_types = None
+        self._can_mixed_v = True
 
     @property
     def type(self) -> type or TypeVar:
         """Stored type, can be instance of type or typing.TypeVar class."""
         return self._type
 
-    @type.setter
-    def type(self, type_: int) -> None:
-        """Setter must use only for mapping."""
-        self._type = type_
-
     @property
-    def v_types(self) -> Union['_Type', Tuple['_Type', ...]]:
+    def v_types(self) -> Tuple['_Type', ...]:
         """Expected types of variables, who contains into instance of
         stored type.
         Only for instance of typing.TypeVar class, who can take parameters.
@@ -101,13 +64,8 @@ class _Type:
         """
         return self._v_types
 
-    @v_types.setter
-    def v_types(self, types: Union['_Type', Tuple['_Type', ...]]) -> None:
-        """Setter must use only for mapping."""
-        self._v_types = types
-
     @property
-    def k_types(self) -> Union['_Type', Tuple['_Type', ...]]:
+    def k_types(self) -> Tuple['_Type', ...]:
         """Expected types of keys, who contains into instance of stored type.
         Only for instance of typing.TypeVar class,
         who can take key, value parameters.
@@ -119,20 +77,40 @@ class _Type:
         """
         return self._k_types
 
-    @k_types.setter
-    def k_types(self, types: Union['_Type', Tuple['_Type', ...]]) -> None:
-        """Setter must use only for mapping."""
-        self._k_types = types
-
     @property
     def can_mixed_v(self) -> bool:
         """Flag, about can mixed value types or must be an strict sequence."""
         return self._can_mixed_v
 
+    @cached_property
+    def _hash(self) -> str:
+        """Generate unique string hash."""
+        hash_ = list(str(hash(self.type)))
+
+        return ''.join(hash_)
+
+    def __repr__(self):
+        return (f"<class 'OverloadType'> type={self.type} "
+                f'v_types={self.v_types} k_types={self.k_types} '
+                f'can_mixed_v={self.can_mixed_v}')
+
+    def __str__(self):
+        return f"_Type({self.type})"
+
+    def __eq__(self, other: '_Type') -> bool:
+        if not isinstance(other, _Type):
+            # Do not support not _Type class instance
+            raise ValueError('_Type object can be compared only with self.')
+
+        return self.type == other.type
+
+    def __hash__(self) -> int:
+        return hash(self._hash)
+
 
 class _TypeHandler:
     """Class encapsulate method for work with types."""
-    _IGNORED_OBJECTS = (
+    _FUNCTION_INTERPRET = (
         Callable,
         Coroutine,
         Iterator,
@@ -142,17 +120,16 @@ class _TypeHandler:
         AbstractContextManager,
         AbstractAsyncContextManager,
     )
-    _TO_ANY_CONVERT = {
-        T: Any,
-        VT: Any,
-        KT: Any,
-        T_co: Any,
-        V_co: Any,
-        VT_co: Any,
-        T_contra: Any,
-        Union: Any,
-        Optional: Any,
-    }
+    _ELLIPSIS_CONVERT = (
+        T,
+        VT,
+        KT,
+        T_co,
+        V_co,
+        VT_co,
+        T_contra,
+        Any,
+    )
 
     __slots__ = ('__dict__', '_deep')
 
@@ -162,7 +139,7 @@ class _TypeHandler:
     def __str__(self) -> str:
         return 'Handler for python3 base types and types from typing module.'
 
-    def __init__(self, deep=False):
+    def __init__(self):
         """
         Args:
             deep (Bool, optional): Check inner field types of arguments (True)
@@ -178,45 +155,62 @@ class _TypeHandler:
                     List[str] -> _Type(list)
 
         """
-        self._deep = deep
+        # Start realisation without deep functional.
+        self._deep = False
 
-    def out_up_types(self, type_: Any) -> Union[_Type, Tuple[_Type, ...]]:
+    def out_up_types(self, type_: Any, ) -> Union[_Type, Tuple[_Type, ...]]:
         """Convert type to _Type instance or tuple with _Type instances."""
-        types, real_type, v_types, k_types, m_v = None, None, None, None, True
+        types, real_type, v_types, k_types = None, None, None, None
+        can_mixed: bool = True
 
         try:
             real_type = type_.__origin__
-            # handling Union and Optional types
-            if real_type is Union or real_type is Optional:
+        except AttributeError:
+            if type_ in self._ELLIPSIS_CONVERT:
+                real_type = Ellipsis
+            else:
+                real_type = type_
+        finally:
+            if real_type in self._FUNCTION_INTERPRET:
+                real_type = FunctionType
+
+        # Handling Union and Optional types.
+        if real_type is Union or real_type is Optional:
+            if getattr(type_, '__args__', None):
                 types = tuple(
                     self.out_up_types(type_) for type_ in type_.__args__
                 )
-            elif self._deep:
-                # # handling function types
-                if real_type not in self._IGNORED_OBJECTS:
-                    try:
-                        # Only typing.Tuple can contain fixed count of types
-                        if real_type is tuple and len(type_.__args__) > 1:
-                            if type_.__args__[-1] is Ellipsis:
-                                v_types = self.out_up_types(type_.__args__[0])
-                            else:
-                                v_types = tuple(
-                                    self.out_up_types(inner_type)
-                                    for inner_type in type_.__args__
-                                )
-                                m_v = False
-                        else:
-                            v_types = self.out_up_types(type_.__args__[-1])
+            else:
+                real_type = Ellipsis
 
-                            # object type is variation of dict
-                            if len(type_.__args__) > 1:
-                                k_types = self.out_up_types(type_.__args__[0])
-                    except IndexError:
-                        pass
-        except AttributeError:
-            real_type = self._TO_ANY_CONVERT.get(type_) or type_
+        # Handling inner types.
+        # elif self._deep:
+        #     try:
+        #         # Only typing.Tuple can contain fixed count of types.
+        #         if real_type is tuple:
+        #             if type_.__args__[-1] is not Ellipsis:
+        #                 can_mixed = False
+        #
+        #             v_types = tuple(
+        #                 self.out_up_types(inner)
+        #                 for inner in type_.__args__[:(-1 - can_mixed)]
+        #             )
+        #
+        #         # Not tuple.
+        #         else:
+        #             v_types = tuple(
+        #                 self.out_up_types(type_.__args__[-1])
+        #             )
+        #
+        #         # object type is variation of dict
+        #         if len(type_.__args__) > 1:
+        #             k_types = tuple(
+        #                 self.out_up_types(type_.__args__[0])
+        #             )
+        #     except IndexError:
+        #         pass
 
-        return types or _Type(real_type, v_types, k_types, m_v)
+        return types or _Type(real_type)
 
     def converting_annotations(
             self,
@@ -224,6 +218,22 @@ class _TypeHandler:
     ) -> Dict[str, _Type]:
         """Converting annotations types to overloader types."""
         for parameter, type_ in annotations.items():
-            annotations[parameter] = self.out_up_types(type_)
+            annotations[parameter] = cast(type, self.out_up_types(type_))
+
+        # Fake type converting.
+        annotations = cast(Dict[str, _Type], annotations)
 
         return annotations
+
+    @staticmethod
+    def extract_type(value: Any) -> _Type:
+        """Convert value to instance of _Type."""
+        return type(value)
+
+    def converting_args(self, args: Tuple[Any, ...]) -> Tuple[_Type, ...]:
+        """Converting all call args values to _Type instances."""
+        return tuple(map(self.extract_type, args))
+
+    def converting_kwargs(self, kwargs: Dict[str, Any]) -> Dict[str, _Type]:
+        """Converting all call kwargs values to _Type instances."""
+        return {key: self.extract_type(value) for key, value in kwargs.items()}

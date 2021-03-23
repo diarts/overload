@@ -66,9 +66,8 @@ class ABCOverloader(metaclass=ABCMeta):
             overload_object: Any,
             strict: bool = False,
             overlapping: bool = False,
-            deep: bool = False,
     ):
-        self.__type_handler__ = _TypeHandler(deep=deep)
+        self.__type_handler__ = _TypeHandler()
         self._strict = strict
         self._overlapping = overlapping
         self._varieties = []
