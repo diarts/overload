@@ -1,10 +1,12 @@
 """File contain base implementation class."""
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Dict, Any
 
 from overload.type.type import _Type
 
-__all__ = ()
+__all__ = (
+    'ABCImplementation',
+)
 
 
 class ABCImplementation(metaclass=ABCMeta):
@@ -21,11 +23,14 @@ class ABCImplementation(metaclass=ABCMeta):
         overload (Any): Overload object.
 
     """
-    __slots__ = ('_implementation', '_strict', '__annotations__')
+    __slots__ = (
+        '_implementation',
+        '_strict',
+    )
 
     def __init__(self, implementation: Any, annotations: Dict[str, _Type],
                  strict: bool = False) -> None:
-        self.__annotations__: Dict[str, _Type] = annotations
+        self._separate_annotations(implementation, annotations)
         self._implementation = implementation
         self._strict = strict
 
@@ -34,15 +39,34 @@ class ABCImplementation(metaclass=ABCMeta):
         """Storage implementation of overload object."""
         return self._implementation
 
+    @property
+    @abstractmethod
+    def __all_annotations__(self) -> Dict[str, _Type]:
+        """Return all implementation annotations."""
+        ...
+
+    @abstractmethod
+    def compare(self, *args, **kwargs) -> bool:
+        """Comparing parameters with storage annotations."""
+        ...
+
+    @abstractmethod
+    def _separate_annotations(self, implementation: Any,
+                              annotations: Dict[str, _Type]) -> None:
+        """Separate implementation annotations."""
+        ...
+
     def __repr__(self) -> str:
-        return f'< Implementation class > annotations={self.__annotations__}.'
+        return (
+            f'< Implementation class > annotations={self.__all_annotations__}.'
+        )
 
     def __str__(self) -> str:
         return f'Implementation of {self.implementation}'
 
     def __eq__(self, other) -> bool:
         if isinstance(other, ABCImplementation):
-            return self.__annotations__ == other.__annotations__
+            return self.__all_annotations__ == other.__all_annotations__
         else:
             raise TypeError(
                 'Implementation object can be compare only with other '
@@ -51,8 +75,3 @@ class ABCImplementation(metaclass=ABCMeta):
 
     def __call__(self, *args, **kwargs) -> Any:
         return self.implementation(*args, **kwargs)
-
-    @abstractmethod
-    def compare(self, *args, **kwargs) -> bool:
-        """Comparing parameters with storage annotations."""
-        ...

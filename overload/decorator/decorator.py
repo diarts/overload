@@ -1,5 +1,5 @@
 from types import FunctionType
-from typing import Callable, cast
+from typing import Callable, cast, Union
 from overload.overloader.function import FunctionOverloader
 
 __all__ = (
@@ -10,12 +10,12 @@ __all__ = (
 def overload(
         strict: bool = False,
         overlapping: bool = False
-) -> Callable:
+) -> Union[Callable, FunctionOverloader]:
     """Replace function to FunctionOverloader object.
 
     Args:
-        strict (bool): Activate validation of implementation annotations count
-            and it priority compared overload object annotations.
+        strict (bool): Activate validation of implementation annotations
+            count compared overload object annotations.
         overlapping (bool): Activate registration of implementation with
             same annotations as the default overload object.
 
@@ -24,7 +24,7 @@ def overload(
         cls = FunctionOverloader(cast(FunctionType, strict))
         return cls
 
-    def wrapper(function):
+    def wrapper(function) -> FunctionOverloader:
         cls = FunctionOverloader(function, strict, overlapping)
         return cls
 
