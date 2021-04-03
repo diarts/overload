@@ -8,6 +8,7 @@ __all__ = (
     'CustomTypeError',
     'CustomTypeAlreadyExist',
     'IndexValueError',
+    'SingleTypeError',
 )
 
 
@@ -80,3 +81,17 @@ class IndexValueError(TypeException):
     _text = ('Index for new type must be integer more than 99 '
              'and not be already is use.')
     _code = 104
+
+
+class SingleTypeError(TypeException):
+    """Exception raise if in implementation annotations will found single type
+    variable more than one time."""
+    __slots__ = ()
+
+    _text = (
+        'In annotations will found more than one single type variable {type_}.'
+    )
+    _code = 105
+
+    def __init__(self, type_: type):
+        super().__init__(self._text.format(type=type_))
