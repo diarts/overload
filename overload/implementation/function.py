@@ -1,9 +1,10 @@
 """File contain function implementation class."""
 from types import FunctionType
-from typing import Union, Dict, List, Tuple, FrozenSet
+from typing import Union, Dict, List, Tuple, FrozenSet, Optional
 
-from overload.type.type import _Type
+from overload.type.type import _Type, _ArgsType, _KwargsType, Args, Kwargs
 from overload.exception.overloader import MissedAnnotations
+from overload.exception.type import SingleTypeError
 
 from .base import ABCImplementation
 
@@ -22,6 +23,8 @@ class FunctionImplementation(ABCImplementation):
         '__kwargs_without_defaults__',
         '__args_without_defaults__',
         '__only_args__',
+        '__infinite_args__',
+        '__infinite_kwargs__',
     )
 
     __kwargs_annotations__: Dict[str, _Type]
@@ -31,6 +34,8 @@ class FunctionImplementation(ABCImplementation):
     __kwargs_without_defaults__: FrozenSet[str]
     __args_without_defaults__: FrozenSet[str]
     __only_args__: FrozenSet[str]
+    __infinite_args__: Optional[_ArgsType]
+    __infinite_kwargs__: Optional[_KwargsType]
 
     @property
     def __all_annotations__(self) -> Dict[str, _Type]:
@@ -115,15 +120,20 @@ class FunctionImplementation(ABCImplementation):
     def _separate_annotations(self, implementation: FunctionType,
                               annotations: Dict[str, _Type]) -> None:
         """Separate function annotations to de."""
+        # Remove return annotations if it exist.
+        annotations.pop('return', None)
+
         self.__args_annotations__ = {}
         self.__kwargs_annotations__ = {}
+        self.__infinite_kwargs__ = None
+        self.__infinite_args__ = None
 
         args_count = implementation.__code__.co_argcount
         kwargs_count = implementation.__code__.co_kwonlyargcount
 
         # Check all parameters has been annotation.
         parameters_count = args_count + kwargs_count
-        if len(annotations) != parameters_count:
+        if len(annotations) < parameters_count:
             raise MissedAnnotations(
                 f'Implementation has {parameters_count} parameters, but '
                 f'has been annotated only {len(annotations)} parameters. All '
@@ -138,6 +148,16 @@ class FunctionImplementation(ABCImplementation):
         for key, value in annotations.items():
             if counter < args_count:
                 self.__args_annotations__[key] = value
+            elif isinstance(value, _ArgsType):
+                if self.__infinite_args__:
+                    raise SingleTypeError(type_=Args)
+                else:
+                    self.__infinite_args__ = value
+            elif isinstance(value, _KwargsType):
+                if self.__infinite_kwargs__:
+                    raise SingleTypeError(type_=Kwargs)
+                else:
+                    self.__infinite_kwargs__ = value
             else:
                 self.__kwargs_annotations__[key] = value
 
