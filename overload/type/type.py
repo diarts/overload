@@ -20,6 +20,8 @@ from typing import (
     Tuple,
     # Functions.
     cast,
+    # Other.
+    Generic
 )
 from collections.abc import (
     Callable,
@@ -31,7 +33,10 @@ from collections.abc import (
 )
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
 
-__all__ = ()
+__all__ = (
+    'Args',
+    'Kwargs'
+)
 
 
 class _Type:
@@ -82,13 +87,6 @@ class _Type:
         """Flag, about can mixed value types or must be an strict sequence."""
         return self._can_mixed_v
 
-    @cached_property
-    def _hash(self) -> str:
-        """Generate unique string hash."""
-        hash_ = list(str(hash(self.type)))
-
-        return ''.join(hash_)
-
     def __repr__(self):
         return (f"<class 'OverloadType'> type={self.type} "
                 f'v_types={self.v_types} k_types={self.k_types} '
@@ -104,8 +102,40 @@ class _Type:
 
         return self.type == other.type
 
-    def __hash__(self) -> int:
-        return hash(self._hash)
+    def __hash__(self):
+        return hash(self.type)
+
+
+class _SingleType:
+    """Base type for single types."""
+    __slots__ = ('_types',)
+
+    _types: Tuple[Any, ...]
+
+    def __init__(self, *types: _Type):
+        self._types = types
+
+    @property
+    def types(self):
+        """Tuple of contain types."""
+        return self._types
+
+    def __repr__(self) -> str:
+        return f'< {self.__str__()} with types={self.types}>'
+
+    def __str__(self) -> str:
+        return self.__class__.__name__
+
+    def __eq__(self, other) -> bool:
+        return other in self.types
+
+
+class _ArgsType(_SingleType):
+    pass
+
+
+class _KwargsType(_SingleType):
+    pass
 
 
 class _TypeHandler:
@@ -160,7 +190,8 @@ class _TypeHandler:
 
     def out_up_types(self, type_: Any, ) -> Union[_Type, Tuple[_Type, ...]]:
         """Convert type to _Type instance or tuple with _Type instances."""
-        types, real_type, v_types, k_types = None, None, None, None
+        real_type, v_types, k_types = None, None, None
+        type_class = _Type
         can_mixed: bool = True
 
         try:
@@ -173,15 +204,21 @@ class _TypeHandler:
         finally:
             if real_type in self._FUNCTION_INTERPRET:
                 real_type = FunctionType
+            elif real_type is Args:
+                type_class = _ArgsType
+            elif real_type is Kwargs:
+                type_class = _KwargsType
 
-        # Handling Union and Optional types.
-        if real_type is Union or real_type is Optional:
-            if getattr(type_, '__args__', None):
-                types = tuple(
-                    self.out_up_types(type_) for type_ in type_.__args__
-                )
-            else:
-                real_type = Ellipsis
+        # Handling Union and Optional types, Args and Kwargs types.
+        if real_type in (Args, Kwargs, Union, Optional):
+            try:
+                type_args = type_.__args__
+            except AttributeError:
+                type_args = (Any,)
+
+            real_type = set(
+                self.out_up_types(in_type) for in_type in type_args
+            )
 
         # Handling inner types.
         # elif self._deep:
@@ -210,7 +247,15 @@ class _TypeHandler:
         #     except IndexError:
         #         pass
 
-        return types or _Type(real_type)
+        # Generate output result.
+        real_type_is_set = isinstance(real_type, set)
+        is_single_subclass = issubclass(type_class, _SingleType)
+        if real_type_is_set and not is_single_subclass:
+            type_ = real_type
+        else:
+            type_ = type_class(real_type)
+
+        return type_
 
     def converting_annotations(
             self,
@@ -238,3 +283,11 @@ class _TypeHandler:
     def converting_kwargs(self, kwargs: Dict[str, Any]) -> Dict[str, _Type]:
         """Converting all call kwargs values to _Type instances."""
         return {key: self.extract_type(value) for key, value in kwargs.items()}
+
+
+class Args(Generic[T]):
+    pass
+
+
+class Kwargs(Generic[T]):
+    pass
