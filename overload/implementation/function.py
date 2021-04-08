@@ -1,6 +1,6 @@
 """File contain function implementation class."""
 from types import FunctionType
-from typing import Union, Dict, List, Tuple, FrozenSet, Optional
+from typing import Union, Dict, List, Tuple, FrozenSet, Optional, Set
 
 from overload.type.type import _Type, _ArgsType, _KwargsType, Args, Kwargs
 from overload.exception.overloader import MissedAnnotations
@@ -58,10 +58,6 @@ class FunctionImplementation(ABCImplementation):
         unnamed = unnamed or ()
         check_args = self.__args_annotations__.copy()
 
-        # Check parameters count more than registered parameters count.
-        if len(self.__all_annotations__) < len(named) + len(unnamed):
-            return False
-
         # Compare named parameters.
         # Check: in named parameters missed kwargs only parameters without
         # default value and is only args in kwargs.
@@ -76,43 +72,66 @@ class FunctionImplementation(ABCImplementation):
         for param, type_ in named.items():
             try:
                 # Check type of parameter.
-                if type_ != self.__kwargs_annotations__[param]:
+                if not self._compare_type(
+                        type_,
+                        self.__kwargs_annotations__[param],
+                ):
                     return False
 
-            # Parameter not fount in registered kwargs annotations.
+            # Parameter not found in registered kwargs annotations.
             except KeyError:
                 # Remove parameter from args and compare it.
                 parameter_in_args = check_args.pop(param, None)
-                parameter_has_def = param in self.__default_kwargs__
 
-                # Parameter not found in args and nas not default value.
-                if not parameter_in_args and not parameter_has_def:
+                # Parameter not found in args and nas not default value and
+                # implementation hasn't kwargs.
+                if (
+                        not parameter_in_args
+                        and not self.__infinite_kwargs__
+                ):
                     return False
 
                 # Parameter from args, check it.
                 elif parameter_in_args:
                     try:
-                        if type_ != self.__args_annotations__[param]:
+                        if not self._compare_type(
+                                type_,
+                                self.__args_annotations__[param]
+                        ):
                             return False
 
                     # Parameter not found in registered args or kwargs.
                     except KeyError:
                         return False
 
+                # Parameters not in kwargs and args check it with infinite.
+                elif self.__infinite_kwargs__ != type_:
+                    return False
+
         # Compare unnamed parameters.
-        # Check args without default count less than unnamed.
         check_args_keys = tuple(check_args.keys())
-        if len(set(check_args_keys) - self.__default_args__) > len(unnamed):
-            return False
 
         # Check args types.
-        index = None
+        index = 0
         for index, type_ in enumerate(unnamed):
-            if type_ != check_args[check_args_keys[index]]:
-                return False
-        else:
+            try:
+                if not self._compare_type(
+                        type_,
+                        check_args.pop(check_args_keys[index]),
+                ):
+                    return False
+
+            # Check args is ended, but unnamed exists. Check it with infinite.
+            except IndexError:
+                if (
+                        not self.__infinite_args__
+                        or self.__infinite_args__ != type_
+                ):
+                    return False
+
+        if check_args:
             # Check args without defaults in check annotations.
-            if self.__args_without_defaults__ & set(check_args_keys[index:]):
+            if set(check_args_keys[index:]) - self.__args_without_defaults__:
                 return False
 
         return True
@@ -193,3 +212,12 @@ class FunctionImplementation(ABCImplementation):
         else:
             self.__default_args__ = frozenset()
             self.__args_without_defaults__ = frozenset(args_annotations_keys)
+
+    @staticmethod
+    def _compare_type(type_: _Type,
+                      parameter: Union[_Type, Set[_Type]]) -> bool:
+        """Compare type with annotation parameter type."""
+        return False if (
+                (isinstance(parameter, _Type) and type_ != parameter)
+                or (isinstance(parameter, set) and type_ not in parameter)
+        ) else True
