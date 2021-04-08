@@ -112,11 +112,11 @@ OUT_UP_TYPES_AND_EXPECTATIONS = (
     # Any
     (True, typing.Any, _Type(...)),
     # Optional
-    (True, typing.Optional, _Type(...)),
-    (True, typing.Optional[str], (_Type(str), _Type(type(None)))),
+    (True, typing.Optional, {_Type(...),}),
+    (True, typing.Optional[str], {_Type(str), _Type(type(None))}),
     # Union
-    (True, typing.Union, (_Type(...))),
-    (True, typing.Union[str, int], (_Type(str), _Type(int))),
+    (True, typing.Union, {_Type(...),}),
+    (True, typing.Union[str, int], {_Type(str), _Type(int)}),
     # Deep mixed type
     (True, typing.List[
         typing.Union[str, typing.Tuple[

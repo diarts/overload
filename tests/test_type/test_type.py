@@ -37,6 +37,6 @@ def test_converting_args(args, result):
     'kwargs,result',
     CONVERTING_KWARGS,
 )
-def test_converting_args(kwargs, result):
+def test_converting_kwargs(kwargs, result):
     handler = _TypeHandler()
     assert result == handler.converting_kwargs(kwargs)
