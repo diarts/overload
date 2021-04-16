@@ -105,14 +105,14 @@ class FunctionImplementation(ABCImplementation):
                         return False
 
                 # Parameters not in kwargs and args check it with infinite.
-                elif self.__infinite_kwargs__ != type_:
+                elif type_ not in self.__infinite_kwargs__:
                     return False
 
         # Compare unnamed parameters.
         check_args_keys = tuple(check_args.keys())
 
         # Check args types.
-        index = 0
+        index = -1
         for index, type_ in enumerate(unnamed):
             try:
                 if not self._compare_type(
@@ -125,13 +125,13 @@ class FunctionImplementation(ABCImplementation):
             except IndexError:
                 if (
                         not self.__infinite_args__
-                        or self.__infinite_args__ != type_
+                        or type_ not in self.__infinite_args__
                 ):
                     return False
 
         if check_args:
             # Check args without defaults in check annotations.
-            if set(check_args_keys[index:]) - self.__args_without_defaults__:
+            if set(check_args_keys[index + 1:]) - self.__default_args__:
                 return False
 
         return True

@@ -131,7 +131,6 @@ class ABCOverloader(metaclass=ABCMeta):
             annotations=self.__type_handler__.converting_annotations(
                 annotations=implementation.__annotations__,
             ),
-            strict=self._strict,
         )
         self._varieties.append(new_implementation)
 

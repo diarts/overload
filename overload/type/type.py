@@ -100,6 +100,9 @@ class _Type:
             # Do not support not _Type class instance
             raise ValueError('_Type object can be compared only with self.')
 
+        if self.type is Ellipsis or other.type is Ellipsis:
+            return True
+
         return self.type == other.type
 
     def __hash__(self):
@@ -112,7 +115,7 @@ class _SingleType:
 
     _types: Tuple[Any, ...]
 
-    def __init__(self, *types: _Type):
+    def __init__(self, types: Tuple[_Type, ...]):
         self._types = types
 
     @property
@@ -126,8 +129,14 @@ class _SingleType:
     def __str__(self) -> str:
         return self.__class__.__name__
 
-    def __eq__(self, other) -> bool:
-        return other in self.types
+    def __contains__(self, item):
+        return item in self.types
+
+    def __eq__(self, other):
+        if not isinstance(other, _SingleType):
+            return False
+        else:
+            return self.types == other.types
 
 
 class _ArgsType(_SingleType):
@@ -209,17 +218,24 @@ class _TypeHandler:
             elif real_type is Kwargs:
                 type_class = _KwargsType
 
-        # Handling Union and Optional types, Args and Kwargs types.
+        # Handling Union and Optional types.
         if real_type in (Args, Kwargs, Union, Optional):
             try:
                 type_args = type_.__args__
             except AttributeError:
                 type_args = (Any,)
 
-            real_type = set(
-                self.out_up_types(in_type) for in_type in type_args
-            )
+            real_type = []
 
+            for in_type in type_args:
+                new_type = self.out_up_types(in_type)
+
+                if isinstance(new_type, tuple):
+                    real_type.extend(new_type)
+                else:
+                    real_type.append(new_type)
+
+            real_type = tuple(real_type)
         # Handling inner types.
         # elif self._deep:
         #     try:
@@ -248,9 +264,9 @@ class _TypeHandler:
         #         pass
 
         # Generate output result.
-        real_type_is_set = isinstance(real_type, set)
+        real_type_is_tuple = isinstance(real_type, tuple)
         is_single_subclass = issubclass(type_class, _SingleType)
-        if real_type_is_set and not is_single_subclass:
+        if real_type_is_tuple and not is_single_subclass:
             type_ = real_type
         else:
             type_ = type_class(real_type)

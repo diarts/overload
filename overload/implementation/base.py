@@ -25,14 +25,13 @@ class ABCImplementation(metaclass=ABCMeta):
     """
     __slots__ = (
         '_implementation',
-        '_strict',
     )
 
-    def __init__(self, implementation: Any, annotations: Dict[str, _Type],
-                 strict: bool = False) -> None:
+    def __init__(
+            self, implementation: Any, annotations: Dict[str, _Type],
+        ) -> None:
         self._separate_annotations(implementation, annotations)
         self._implementation = implementation
-        self._strict = strict
 
     @property
     def implementation(self) -> Any:
