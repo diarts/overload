@@ -3,7 +3,7 @@ import collections
 import contextlib
 from types import FunctionType
 
-from overload.type.type import _Type
+from overload.type.type import _Type, Kwargs, Args, _ArgsType, _KwargsType
 
 
 class _UnknownType1:
@@ -112,11 +112,11 @@ OUT_UP_TYPES_AND_EXPECTATIONS = (
     # Any
     (True, typing.Any, _Type(...)),
     # Optional
-    (True, typing.Optional, {_Type(...),}),
-    (True, typing.Optional[str], {_Type(str), _Type(type(None))}),
+    (True, typing.Optional, (_Type(...),)),
+    (True, typing.Optional[str], (_Type(str), _Type(type(None)))),
     # Union
-    (True, typing.Union, {_Type(...),}),
-    (True, typing.Union[str, int], {_Type(str), _Type(int)}),
+    (True, typing.Union, (_Type(...),)),
+    (True, typing.Union[str, int], (_Type(str), _Type(int))),
     # Deep mixed type
     (True, typing.List[
         typing.Union[str, typing.Tuple[
@@ -138,6 +138,26 @@ OUT_UP_TYPES_AND_EXPECTATIONS = (
     ],
      _Type(list)
      ),
+    # Args without types.
+    (True, Args, _ArgsType((_Type(...),))),
+    # Args with single type.
+    (True, Args[int], _ArgsType((_Type(int),))),
+    # Args with many types.
+    (True, Args[typing.Union[int, str]], _ArgsType((_Type(int), _Type(str),))),
+    # Kwargs without types.
+    (True, Kwargs, _KwargsType((_Type(...),))),
+    # Kwargs with single type.
+    (True, Kwargs[int], _KwargsType((_Type(int),))),
+    # Kwargs with many types.
+    (
+        True,
+        Kwargs[typing.Union[int, str]],
+        _KwargsType((_Type(int), _Type(str)))
+    ),
+    # Union with Optional.
+    (True, typing.Union[typing.Optional[str], int], (
+        _Type(str), _Type(type(None)), _Type(int),
+    ))
 )
 
 CONVERTING_ARGS = (
