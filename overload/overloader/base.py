@@ -136,20 +136,21 @@ class ABCOverloader(metaclass=ABCMeta):
 
     def _validate_register_object(self, object_: Any) -> None:
         """Validation of registering object."""
-        if getattr(object_, '__annotations__', None) is None:
+        object_annotations = getattr(object_, '__annotations__', None)
+        def_annotations = self.default.__all_annotations__
+
+        if object_annotations is None:
             raise MissedAnnotations()
 
         if self.is_strict:
-            ann_count = len(object_.__annotations__)
-            def_ann_count = len(self.default.__annotations__)
 
             # Check annotations count.
-            if ann_count != def_ann_count:
+            if len(object_annotations) != len(def_annotations):
                 raise AnnotationCountError()
 
             # Check comparing of object parameters.
-            default_ann_keys = tuple(self.default.__annotations__.keys())
-            for index, value in enumerate(object_.__annotations__):
+            default_ann_keys = tuple(def_annotations.keys())
+            for index, value in enumerate(object_annotations):
                 if value != default_ann_keys[index]:
                     raise ArgumentNameError()
 
@@ -157,19 +158,22 @@ class ABCOverloader(metaclass=ABCMeta):
             # Check all parameter types of new implementation not comparing
             # with current default object.
             new_annotations = self.__type_handler__.converting_annotations(
-                annotations=object_.__annotations__,
+                annotations=object_annotations,
             )
 
             if new_annotations:
-                try:
-                    for parameter, value in new_annotations.items():
-                        if value != self.default.__annotations__[parameter]:
-                            break
-                    else:
-                        raise OverlappingError()
-                except KeyError:
-                    if self.is_strict:
-                        raise ArgumentNameError()
+                if len(object_annotations) == len(def_annotations):
+                    # Annotation count of default and new object is equal,
+                    # compare its.
+                    try:
+                        for parameter, value in new_annotations.items():
+                            if value != def_annotations[parameter]:
+                                break
+                        else:
+                            raise OverlappingError()
+                    except KeyError:
+                        if self.is_strict:
+                            raise ArgumentNameError()
 
-            elif not self.default.__annotations__:
+            elif not def_annotations:
                 raise OverlappingError()

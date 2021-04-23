@@ -6,6 +6,8 @@ from overload.overloader.base import ABCOverloader
 from overload.type.type import _Type
 from overload.exception.overloader import (
     FunctionRegisterTypeError,
+    AnnotationCountError,
+    MissedAnnotations,
 )
 from overload.implementation.function import FunctionImplementation
 
@@ -38,14 +40,22 @@ class FunctionOverloader(ABCOverloader):
         implementation = self._get_variety(args_types, kwargs_types)
         return implementation(*args, **kwargs)
 
-    def register(self, function_: Callable) -> None:
+    def register(self, function_: FunctionType) -> None:
         """Register new implementation of function/coroutine."""
         super(FunctionOverloader, self).register(function_)
 
-    def _validate_register_object(self, function_: Callable) -> None:
+    def _validate_register_object(self, function_: FunctionType) -> None:
         """Validation of registering object."""
         if type(function_) is not FunctionType:
             raise FunctionRegisterTypeError()
+
+        arg_count = function_.__code__.co_argcount
+        kw_count = function_.__code__.co_kwonlyargcount
+
+        if not function_.__annotations__ and arg_count + kw_count:
+            raise MissedAnnotations()
+        elif len(function_.__annotations__) < arg_count + kw_count:
+            raise AnnotationCountError()
 
         super(FunctionOverloader, self)._validate_register_object(function_)
 
