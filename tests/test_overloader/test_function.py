@@ -2,13 +2,13 @@ import pytest
 
 from overload.overloader.function import FunctionOverloader
 
-from .data import validation_of_register_func
+from .data import FUNCTION_OVERLOADER_REGISTER
 
 
 @pytest.mark.overloader
 @pytest.mark.parametrize(
     'default,strict,overlap,new_func,exception',
-    validation_of_register_func,
+    FUNCTION_OVERLOADER_REGISTER,
 )
 def test_validation_of_register_func(default, strict, overlap, new_func,
                                      exception):
