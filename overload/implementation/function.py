@@ -57,6 +57,7 @@ class FunctionImplementation(ABCImplementation):
         named = named or {}
         unnamed = unnamed or ()
         check_args = self.__args_annotations__.copy()
+        check_kwargs = self.__kwargs_annotations__.copy()
 
         # Compare named parameters.
         # Check: in named parameters missed kwargs only parameters without
@@ -74,31 +75,43 @@ class FunctionImplementation(ABCImplementation):
                 # Check type of parameter.
                 if not self._compare_type(
                         type_,
-                        self.__kwargs_annotations__[param],
+                        check_kwargs.pop(param),
                 ):
                     return False
 
             # Parameter not found in registered kwargs annotations.
             except KeyError:
-                # Remove parameter from args and compare it.
-                parameter_in_args = check_args.pop(param, None)
-
                 # Parameter not found in args and nas not default value and
                 # implementation hasn't kwargs.
                 if (
-                        not parameter_in_args
+                        param not in self.__args_annotations__
                         and not self.__infinite_kwargs__
                 ):
                     return False
 
                 # Parameter from args, check it.
-                elif parameter_in_args:
+                elif param in self.__args_annotations__:
                     try:
-                        if not self._compare_type(
-                                type_,
-                                self.__args_annotations__[param]
-                        ):
-                            return False
+                        # Slice check_args.
+                        found_border = False
+                        for key, value in self.__args_annotations__.items():
+                            if found_border:
+                                # Transition args to kwargs.
+                                try:
+                                    check_kwargs[key] = check_args.pop(key)
+                                except KeyError:
+                                    break
+
+                            # Find parameter in args.
+                            elif key == param:
+                                found_border = True
+
+                                # Check parameter type.
+                                if not self._compare_type(
+                                        type_,
+                                        check_args.pop(param),
+                                ):
+                                    return False
 
                     # Parameter not found in registered args or kwargs.
                     except KeyError:
@@ -146,6 +159,7 @@ class FunctionImplementation(ABCImplementation):
         self.__kwargs_annotations__ = {}
         self.__infinite_kwargs__ = None
         self.__infinite_args__ = None
+        only_args = {}
 
         args_count = implementation.__code__.co_argcount
         kwargs_count = implementation.__code__.co_kwonlyargcount
@@ -160,27 +174,40 @@ class FunctionImplementation(ABCImplementation):
             )
 
         args_only = getattr(implementation.__code__, 'co_posonlyargcount', 0)
-        self.__only_args__ = frozenset(tuple(annotations.keys())[:args_only])
 
         # Split annotations to args and kwargs. Counter track parameter index.
         counter = 0
         for key, value in annotations.items():
-            if counter < args_count:
+            # First simple args.
+            if counter < (args_count - args_only):
                 self.__args_annotations__[key] = value
+
+            # Second only args.
+            elif counter < args_count:
+                only_args[key] = value
+
             elif isinstance(value, _ArgsType):
                 if self.__infinite_args__:
                     raise SingleTypeError(type_=Args)
                 else:
                     self.__infinite_args__ = value
+
             elif isinstance(value, _KwargsType):
                 if self.__infinite_kwargs__:
                     raise SingleTypeError(type_=Kwargs)
                 else:
                     self.__infinite_kwargs__ = value
+
             else:
                 self.__kwargs_annotations__[key] = value
 
             counter += 1
+
+        # Switch only args and simple args position.
+        self.__only_args__ = frozenset(only_args.keys())
+
+        only_args.update(self.__args_annotations__)
+        self.__args_annotations__ = only_args
 
         # Getting kwargs default values.
         if implementation.__kwdefaults__:
