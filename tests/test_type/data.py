@@ -1,13 +1,9 @@
 import typing
 import collections
 import contextlib
+from types import FunctionType
 
-from overload.type.type import _Type
-from overload.exception.type import (
-    CustomTypeError,
-    CustomTypeAlreadyExist,
-    IndexValueError,
-)
+from overload.type.type import _Type, Kwargs, Args, _ArgsType, _KwargsType
 
 
 class _UnknownType1:
@@ -18,161 +14,160 @@ class _UnknownType2:
     pass
 
 
-out_up_types_types_and_expectations = [
+OUT_UP_TYPES_AND_EXPECTATIONS = (
+    # format: deep, input_type, expected
     # Native types
     # 0
-    (None, _Type(None)),
-    (type(None), _Type(type(None))),
+    (True, None, _Type(None)),
+    (True, type(None), _Type(type(None))),
     # 1
-    (bytes, _Type(bytes)),
-    (collections.abc.ByteString, _Type(collections.abc.ByteString)),
+    (True, bytes, _Type(bytes)),
+    (True, collections.abc.ByteString, _Type(collections.abc.ByteString)),
     # 2
-    (bytearray, _Type(bytearray)),
+    (True, bytearray, _Type(bytearray)),
     # 3
-    (str, _Type(str)),
-    (typing.Text, _Type(str)),
+    (True, str, _Type(str)),
+    (True, typing.Text, _Type(str)),
     # 4
-    (int, _Type(int)),
+    (True, int, _Type(int)),
     # 5
-    (tuple, _Type(tuple)),
-    (typing.Tuple, _Type(tuple)),
-    (typing.Tuple[int], _Type(tuple, _Type(int))),
-    (typing.Tuple[int, float, str], _Type(
-        type_=tuple,
-        v_types=(
-            _Type(int),
-            _Type(float),
-            _Type(str),
-        ),
-        can_mixed_v=False,
-    )),
+    (True, tuple, _Type(tuple)),
+    (True, typing.Tuple, _Type(tuple)),
+    (True, typing.Tuple[int], _Type(tuple)),
+    (True, typing.Tuple[int, float, str], _Type(tuple)),
+    (True, typing.Tuple[typing.Union[str, int]], _Type(tuple)),
+    (True, typing.Tuple[typing.Union[str, int], ...], _Type(tuple)),
     # 6
-    (dict, _Type(dict)),
-    (typing.Dict, _Type(dict, _Type(typing.VT), _Type(typing.KT))),
-    (typing.Dict[str, int], _Type(dict, _Type(int), _Type(str))),
+    (True, dict, _Type(dict)),
+    (True, typing.Dict, _Type(dict)),
+    (True, typing.Dict[str, int], _Type(dict)),
     # 7
-    (list, _Type(list)),
-    (typing.List, _Type(list, _Type(typing.T))),
-    (typing.List[int], _Type(list, _Type(int))),
+    (True, list, _Type(list)),
+    (True, typing.List, _Type(list)),
+    (True, typing.List[int], _Type(list)),
     # 8
-    (set, _Type(set)),
-    (typing.Set, _Type(set, _Type(typing.T))),
-    (typing.Set[int], _Type(set, _Type(int))),
+    (True, set, _Type(set)),
+    (True, typing.Set, _Type(set)),
+    (True, typing.Set[int], _Type(set)),
+    (False, typing.Set[int], _Type(set)),
     # 9
-    (frozenset, _Type(frozenset)),
-    (typing.FrozenSet, _Type(frozenset, _Type(typing.T_co))),
-    (typing.FrozenSet[int], _Type(frozenset, _Type(int))),
+    (True, frozenset, _Type(frozenset)),
+    (True, typing.FrozenSet, _Type(frozenset)),
+    (True, typing.FrozenSet[int], _Type(frozenset)),
     # Collections types
     # 21
-    (collections.ChainMap, _Type(collections.ChainMap)),
-    (typing.ChainMap, _Type(collections.ChainMap, _Type(typing.VT),
-                            _Type(typing.KT))),
-    (typing.ChainMap[str, int], _Type(collections.ChainMap, _Type(int),
-                                      _Type(str))),
+    (True, collections.ChainMap, _Type(collections.ChainMap)),
+    (True, typing.ChainMap, _Type(collections.ChainMap)),
+    (True, typing.ChainMap[str, int], _Type(collections.ChainMap)),
     # 22
-    (collections.Counter, _Type(collections.Counter)),
-    (typing.Counter, _Type(collections.Counter, _Type(typing.T))),
-    (typing.Counter[int], _Type(collections.Counter, _Type(int))),
+    (True, collections.Counter, _Type(collections.Counter)),
+    (True, typing.Counter, _Type(collections.Counter)),
+    (True, typing.Counter[int], _Type(collections.Counter)),
     # 23
-    (collections.deque, _Type(collections.deque)),
-    (typing.Deque, _Type(collections.deque, _Type(typing.T))),
-    (typing.Deque[int], _Type(collections.deque, _Type(int))),
+    (True, collections.deque, _Type(collections.deque)),
+    (True, typing.Deque, _Type(collections.deque)),
+    (True, typing.Deque[int], _Type(collections.deque)),
     # 24
-    (collections.defaultdict, _Type(collections.defaultdict)),
-    (typing.DefaultDict, _Type(collections.defaultdict, _Type(typing.VT),
-                               _Type(typing.KT))),
-    (typing.DefaultDict[str, int], _Type(collections.defaultdict, _Type(int),
-                                         _Type(str))),
+    (True, collections.defaultdict, _Type(collections.defaultdict)),
+    (True, typing.DefaultDict, _Type(collections.defaultdict)),
+    (True, typing.DefaultDict[str, int], _Type(collections.defaultdict)),
     # 25
-    (collections.OrderedDict, _Type(collections.OrderedDict)),
-    (typing.OrderedDict, _Type(collections.OrderedDict, _Type(typing.VT),
-                               _Type(typing.KT))),
-    (typing.OrderedDict[str, int], _Type(collections.OrderedDict, _Type(int),
-                                         _Type(str))),
+    (True, collections.OrderedDict, _Type(collections.OrderedDict)),
+    (True, typing.OrderedDict, _Type(collections.OrderedDict)),
+    (True, typing.OrderedDict[str, int], _Type(collections.OrderedDict)),
     # Other objects types
     # 31
-    (collections.abc.Callable, _Type(collections.abc.Callable)),
-    (typing.Callable, _Type(collections.abc.Callable)),
-    (typing.Callable[[str, int], int], _Type(collections.abc.Callable)),
+    (True, collections.abc.Callable, _Type(FunctionType)),
+    (True, typing.Callable, _Type(FunctionType)),
+    (True, typing.Callable[[str, int], int], _Type(FunctionType)),
     # 32
-    (collections.abc.Coroutine, _Type(collections.abc.Coroutine)),
-    (typing.Coroutine, _Type(collections.abc.Coroutine)),
-    (typing.Coroutine[str, int, int], _Type(collections.abc.Coroutine)),
+    (True, collections.abc.Coroutine, _Type(FunctionType)),
+    (True, typing.Coroutine, _Type(FunctionType)),
+    (True, typing.Coroutine[str, int, int], _Type(FunctionType)),
     # 33
-    (collections.abc.Iterator, _Type(collections.abc.Iterator)),
-    (typing.Iterator, _Type(collections.abc.Iterator)),
-    (typing.Iterator[str], _Type(collections.abc.Iterator)),
+    (True, collections.abc.Iterator, _Type(FunctionType)),
+    (True, typing.Iterator, _Type(FunctionType)),
+    (True, typing.Iterator[str], _Type(FunctionType)),
     # 34
-    (collections.abc.AsyncIterator, _Type(collections.abc.AsyncIterator)),
-    (typing.AsyncIterator, _Type(collections.abc.AsyncIterator)),
-    (typing.AsyncIterator[str], _Type(collections.abc.AsyncIterator)),
+    (True, collections.abc.AsyncIterator, _Type(FunctionType)),
+    (True, typing.AsyncIterator, _Type(FunctionType)),
+    (True, typing.AsyncIterator[str], _Type(FunctionType)),
     # 35
-    (collections.abc.Generator, _Type(collections.abc.Generator)),
-    (typing.Generator, _Type(collections.abc.Generator)),
-    (typing.Generator[str, int, int], _Type(collections.abc.Generator)),
+    (True, collections.abc.Generator, _Type(FunctionType)),
+    (True, typing.Generator, _Type(FunctionType)),
+    (True, typing.Generator[str, int, int], _Type(FunctionType)),
     # 36
-    (collections.abc.AsyncGenerator, _Type(collections.abc.AsyncGenerator)),
-    (typing.AsyncGenerator, _Type(collections.abc.AsyncGenerator)),
-    (typing.AsyncGenerator[str, int], _Type(collections.abc.AsyncGenerator)),
+    (True, collections.abc.AsyncGenerator, _Type(FunctionType)),
+    (True, typing.AsyncGenerator, _Type(FunctionType)),
+    (True, typing.AsyncGenerator[str, int], _Type(FunctionType)),
     # 37
-    (contextlib.AbstractContextManager, _Type(
-        contextlib.AbstractContextManager)),
-    (typing.ContextManager, _Type(contextlib.AbstractContextManager)),
-    (typing.ContextManager[int], _Type(contextlib.AbstractContextManager)),
+    (True, contextlib.AbstractContextManager, _Type(FunctionType)),
+    (True, typing.ContextManager, _Type(FunctionType)),
+    (True, typing.ContextManager[int], _Type(FunctionType)),
     # 38
-    (contextlib.AbstractAsyncContextManager,
-     _Type(contextlib.AbstractAsyncContextManager)),
-    (typing.AsyncContextManager,
-     _Type(contextlib.AbstractAsyncContextManager)),
-    (typing.AsyncContextManager[int],
-     _Type(contextlib.AbstractAsyncContextManager)),
+    (True, contextlib.AbstractAsyncContextManager, _Type(FunctionType)),
+    (True, typing.AsyncContextManager, _Type(FunctionType)),
+    (True, typing.AsyncContextManager[int], _Type(FunctionType)),
     # Special types
     # Any
-    (typing.Any, _Type(typing.Any)),
+    (True, typing.Any, _Type(...)),
     # Optional
-    (typing.Optional, _Type(typing.Optional)),
-    (typing.Optional[str], (_Type(str), _Type(type(None)))),
+    (True, typing.Optional, (_Type(...),)),
+    (True, typing.Optional[str], (_Type(str), _Type(type(None)))),
     # Union
-    (typing.Union, (_Type(typing.Union))),
-    (typing.Union[str, int], (_Type(str), _Type(int))),
+    (True, typing.Union, (_Type(...),)),
+    (True, typing.Union[str, int], (_Type(str), _Type(int))),
     # Deep mixed type
-    (typing.List[
-         typing.Union[str, typing.Tuple[
-             typing.Dict[int, typing.Optional[
-                 typing.Callable
-             ]]
-         ]]
-     ],
-     _Type(
-         type_=list,
-         v_types=(
-             _Type(str),
-             _Type(
-                 type_=tuple,
-                 v_types=_Type(
-                     type_=dict,
-                     k_types=_Type(int),
-                     v_types=(
-                         _Type(collections.abc.Callable),
-                         _Type(type(None)),
-                     )
-                 )
-             ),
-         )
-     )
-     ),
+    (True, typing.List[
+        typing.Union[str, typing.Tuple[
+            typing.Dict[int, typing.Optional[
+                typing.Callable
+            ]]
+        ]]
+    ],
+     _Type(list)),
     # Unknown type
-    (_UnknownType1, _Type(_UnknownType1)),
-]
+    (True, _UnknownType1, _Type(_UnknownType1)),
+    # Not deep mixed type
+    (False, typing.List[
+        typing.Union[str, typing.Tuple[
+            typing.Dict[int, typing.Optional[
+                typing.Callable
+            ]]
+        ]]
+    ],
+     _Type(list)
+     ),
+    # Args without types.
+    (True, Args, _ArgsType((_Type(...),))),
+    # Args with single type.
+    (True, Args[int], _ArgsType((_Type(int),))),
+    # Args with many types.
+    (True, Args[typing.Union[int, str]], _ArgsType((_Type(int), _Type(str),))),
+    # Kwargs without types.
+    (True, Kwargs, _KwargsType((_Type(...),))),
+    # Kwargs with single type.
+    (True, Kwargs[int], _KwargsType((_Type(int),))),
+    # Kwargs with many types.
+    (
+        True,
+        Kwargs[typing.Union[int, str]],
+        _KwargsType((_Type(int), _Type(str)))
+    ),
+    # Union with Optional.
+    (True, typing.Union[typing.Optional[str], int], (
+        _Type(str), _Type(type(None)), _Type(int),
+    ))
+)
 
-set_custom_type_index = [
-    # type errors
-    (CustomTypeError, 5, None),
-    (CustomTypeAlreadyExist, int, None),
-    # correct add
-    (None, _UnknownType1, 100),
-    # index errors
-    (IndexValueError, _UnknownType2, 99),
-    (IndexValueError, _UnknownType2, 'test'),
-    (IndexValueError, _UnknownType2, 100),
-]
+CONVERTING_ARGS = (
+    # Format: args, result.
+    ((123, '123', [1, 2, 3]), (_Type(int), _Type(str), _Type(list))),
+)
+CONVERTING_KWARGS = (
+    # Format: args, result.
+    (
+        {'int': 123, 'str': '123', 'list': [1, 2, 3]},
+        {'int': _Type(int), 'str': _Type(str), 'list': _Type(list)}
+    ),
+)

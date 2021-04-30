@@ -1,48 +1,42 @@
 import pytest
 
 from overload.type.type import _TypeHandler
-from overload.exception.type import UnknownType
 
 from .data import (
-    out_up_types_types_and_expectations,
-    set_custom_type_index,
+    OUT_UP_TYPES_AND_EXPECTATIONS,
+    CONVERTING_ARGS,
+    CONVERTING_KWARGS,
 )
 
-
-@pytest.mark.type
-def test_get_type_index():
-    handler = _TypeHandler()
-
-    class TestUnknownType:
-        pass
-
-    with pytest.raises(UnknownType):
-        handler[TestUnknownType]
+set_custom_type_handler = _TypeHandler()
 
 
 @pytest.mark.type
 @pytest.mark.parametrize(
-    'exception,type_,index',
-    set_custom_type_index,
+    'deep,input_type,expected',
+    OUT_UP_TYPES_AND_EXPECTATIONS,
 )
-def test_set_custom_type_index(exception, type_, index):
-    handler = _TypeHandler()
-
-    if exception:
-        with pytest.raises(exception):
-            handler[type_] = index
-    else:
-        new_index = handler[type_] = index
-        assert new_index == index
-        assert new_index == handler[type_]
-
-
-@pytest.mark.type
-@pytest.mark.parametrize(
-    'input_type,expected',
-    out_up_types_types_and_expectations,
-)
-def test_out_up_types(input_type, expected):
+def test_out_up_types(deep, input_type, expected):
     handler = _TypeHandler()
     type_ = handler.out_up_types(input_type)
     assert type_ == expected
+
+
+@pytest.mark.type
+@pytest.mark.parametrize(
+    'args,result',
+    CONVERTING_ARGS,
+)
+def test_converting_args(args, result):
+    handler = _TypeHandler()
+    assert result == handler.converting_args(args)
+
+
+@pytest.mark.type
+@pytest.mark.parametrize(
+    'kwargs,result',
+    CONVERTING_KWARGS,
+)
+def test_converting_kwargs(kwargs, result):
+    handler = _TypeHandler()
+    assert result == handler.converting_kwargs(kwargs)
