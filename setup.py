@@ -15,7 +15,7 @@ README_TEXT = README_TEXT.read_text()
 
 setup(
     name='overloader',
-    version='0.1.0',
+    version='0.1.1',
     description=DESCRIPTION,
     long_description=README_TEXT,
     long_description_content_type='text/markdown',

@@ -82,7 +82,7 @@ def _(var1: str, var2: int):
 <b>Overlapping</b> - activate registration of implementation with 
 same annotations as the default overload object.
 ```python
-@overload(overlapping=True)
+@overload(overlapping=False)
 def my_function(var1: str):
     ...
 
