@@ -12,7 +12,7 @@ from overload.exception.overloader import MissedAnnotations
 
 
 class ABCOverloader(metaclass=ABCMeta):
-    """Base overload class. This class getting default object and register
+    """Base overload class. This class getting default object and registering
     many implementations for it, based at their arguments types.
     When calling overloaded object, runned it implementation, who arguments
     types match with call arguments types.
@@ -85,8 +85,9 @@ class ABCOverloader(metaclass=ABCMeta):
 
     @property
     def is_strict(self):
-        """Validate 'typed args' count in register implementation is mapped
-        with count of 'typed args' in default object."""
+        """Validate 'typed args' count in registering implementation is mapped
+        with count of 'typed args' in default object.
+        """
         return self._strict
 
     @property
@@ -108,8 +109,9 @@ class ABCOverloader(metaclass=ABCMeta):
 
     @abstractmethod
     def register(self, object_: Any) -> None:
-        """Register new implementation of overload object
-        by it argument types."""
+        """Registering new implementation of overload object
+        by it argument types.
+        """
         self._validate_register_object(object_)
         self._register_implementation(object_)
 
@@ -119,8 +121,9 @@ class ABCOverloader(metaclass=ABCMeta):
         pass
 
     def as_default(self, object_: Any) -> None:
-        """Register new implementation of overload object as default
-        implementation."""
+        """Registering new implementation of overload object as default
+        implementation.
+        """
         self.register(object_)
         self._default = self.varieties[-1]
 

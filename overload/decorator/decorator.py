@@ -8,7 +8,7 @@ __all__ = (
 
 
 def overload(
-        strict: bool = False,
+        strict: bool = True,
         overlapping: bool = False
 ) -> Union[Callable, FunctionOverloader]:
     """Replace function to FunctionOverloader object.

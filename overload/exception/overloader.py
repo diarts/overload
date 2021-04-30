@@ -22,29 +22,29 @@ class OverloaderError(OverloadException):
 
 
 class RegisterTypeError(OverloaderError):
-    """Exception raise if user try register object of incorrect type."""
+    """Exception raise if user try registering object of incorrect type."""
 
     __slots__ = ()
 
-    _text = 'Incorrect type of register object.'
+    _text = 'Incorrect type of registering object.'
     _code = 201
 
 
 class FunctionRegisterTypeError(RegisterTypeError):
-    """Exception raise if user try register some thing
+    """Exception raise if user try registering something
     but function or coroutine."""
 
     __slots__ = ()
 
     _text = (
-        'Incorrect type of register object. '
+        'Incorrect type of registering object. '
         'Function overloader can registering only functions or coroutines.'
     )
     _code = 202
 
 
 class MissedAnnotations(RegisterTypeError):
-    """Exception raise if register object hasn't annotations."""
+    """Exception raise if registering object hasn't annotations."""
 
     __slots__ = ()
 
@@ -53,22 +53,24 @@ class MissedAnnotations(RegisterTypeError):
 
 
 class AnnotationCountError(RegisterTypeError):
-    """Exception raise if overloader is strict and register object has more
+    """Exception raise if overloader is strict and registering object has more
     arguments with annotation than default object."""
 
     __slots__ = ()
 
-    _text = 'Register object has more args with annotation than default.'
+    _text = 'Registering object has more args with annotation than default.'
     _code = 204
 
 
 class ArgumentNameError(RegisterTypeError):
-    """Exception raise if overloader is strict and register object args names
-    is not map to default object args names."""
+    """Exception raise if overloader is strict and registering object args
+    names is not map to default object args names."""
 
     __slots__ = ()
 
-    _text = 'Register object and default object has different arguments names.'
+    _text = (
+        'Registering object and default object has different arguments names.'
+    )
     _code = 205
 
 

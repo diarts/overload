@@ -41,7 +41,7 @@ class FunctionOverloader(ABCOverloader):
         return implementation(*args, **kwargs)
 
     def register(self, function_: FunctionType) -> None:
-        """Register new implementation of function/coroutine."""
+        """Registering new implementation of function/coroutine."""
         super(FunctionOverloader, self).register(function_)
 
     def _validate_register_object(self, function_: FunctionType) -> None:
@@ -68,8 +68,8 @@ class FunctionOverloader(ABCOverloader):
                 if implementation.compare(named=kwargs, unnamed=args):
                     return implementation
         else:
-            for implementation in reversed(self.varieties):
-                if not implementation.__annotations__:
+            for implementation in self.varieties[::-1]:
+                if not implementation.__all_annotations__:
                     return implementation
 
         return self.default
